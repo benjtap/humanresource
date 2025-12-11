@@ -1,88 +1,16 @@
-<!-- On ajoute Font Awesome pour les icônes -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="main.css">
-<div class="container">
-    <header>
-        <div class="header-content">
-            <h1><i class="fas fa-user-tie"></i> Portail Employé Hargal</h1>
-            <!-- On simule que l'utilisateur est connecté en affichant toujours la nav -->
-            <nav class="nav-menu" id="navMenu">
-                <a href="#"><i class="fas fa-home"></i> Accueil</a>
-                <a href="#"><i class="fas fa-file-invoice-dollar"></i> Fiches de Paie</a>
-                <a href="#"><i class="fas fa-user-circle"></i> Profil</a>
-                <a href="#"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
-            </nav>
-            <!-- Bouton Hamburger pour mobile -->
-            <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-    </header>
-    <main>
-        <!-- Contenu du Tableau de Bord -->
-        <div class="dashboard-welcome">
-            <h2>Bienvenue, <span>Jean Dupont</span> !</h2>
-            <p>Gérez vos informations personnelles et accédez à vos documents depuis votre espace employé.</p>
-        </div>
+<!doctype html>
+<html lang="en">
 
-        <div class="dashboard-cards">
-            <a href="#" class="card">
-                <div class="card-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                <h3>Mes Fiches de Paie</h3>
-                <p>Consultez et téléchargez vos fiches de paie mensuelles.</p>
-            </a>
-            <a href="#" class="card">
-                <div class="card-icon"><i class="fas fa-user-edit"></i></div>
-                <h3>Mon Profil</h3>
-                <p>Mettez à jour vos coordonnées et informations bancaires.</p>
-            </a>
-            <div class="card">
-                <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
-                <h3>Mes Congés</h3>
-                <p>Suivez vos soldes de congés et posez vos jours de repos.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon"><i class="fas fa-book"></i></div>
-                <h3>Documents Internes</h3>
-                <p>Accédez au guide de l'employé et aux politiques de l'entreprise.</p>
-            </div>
-        </div>
-        
-        <!-- Contenu de la page des Fiches de Paie -->
-        <h2>Mes Fiches de Paie</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Mois / Année</th>
-                    <th>Salaire Brut</th>
-                    <th>Salaire Net</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>2024-03</td>
-                    <td>2600.00 €</td>
-                    <td>2190.00 €</td>
-                    <td><a href="#" class="btn-download">Télécharger PDF</a></td>
-                </tr>
-                <tr>
-                    <td>2024-02</td>
-                    <td>2550.00 €</td>
-                    <td>2145.75 €</td>
-                    <td><a href="#" class="btn-download">Télécharger PDF</a></td>
-                </tr>
-                <tr>
-                    <td>2024-01</td>
-                    <td>2500.00 €</td>
-                    <td>2100.50 €</td>
-                    <td><a href="#" class="btn-download">Télécharger PDF</a></td>
-                </tr>
-            </tbody>
-        </table>
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>human</title>
+</head>
 
-    </main>
-    <footer>
-        <p>&copy; 2024 H&O Fashion. Tous droits réservés.</p>
-    </footer>
-</div>
+<body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

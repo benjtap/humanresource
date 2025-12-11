@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כניסה למערכת - הר-גל</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-container">
+                <!-- Placeholder for logo, using text for now or a generic icon if image not available -->
+                <i class="fas fa-user-circle fa-3x" style="color: #ccc;"></i>
+            </div>
+            
+            <div class="login-tabs">
+                <button class="tab-btn active" id="tab-sms">SMS</button>
+                <div class="tab-divider"></div>
+                <button class="tab-btn" id="tab-password">סיסמא</button>
+            </div>
+
+            <!-- SMS Login Form (Default) -->
+            <form id="form-sms" class="login-form">
+                <div class="input-group">
+                    <input type="text" id="id-number" placeholder="מספר זהות" required>
+                </div>
+                <div class="input-group">
+                     <input type="tel" id="phone-number" placeholder="טלפון נייד" required>
+                </div>
+                
+                <button type="submit" class="submit-btn">כניסה</button>
+            </form>
+
+            <!-- Password Login Form (Hidden by default) -->
+            <form id="form-password" class="login-form hidden">
+                <div class="input-group">
+                    <input type="text" id="id-number-pass" placeholder="מספר זהות" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="סיסמא" required>
+                    <i class="fas fa-lock input-icon"></i>
+                </div>
+                
+                <div class="form-footer">
+                    <a href="#" class="forgot-password">שכחתי/ איני יודע את הסיסמא</a>
+                </div>
+
+                <button type="submit" class="submit-btn">כניסה</button>
+            </form>
+            
+            <div class="external-links">
+                <a href="#">סרטון הדרכה לכניסה למערכת</a>
+                <br>
+                <a href="#">קובץ הדרכה לכניסה למערכת</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple script for tab switching -->
+    <script>
+        document.getElementById('tab-sms').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('tab-password').classList.remove('active');
+            document.getElementById('form-sms').classList.remove('hidden');
+            document.getElementById('form-password').classList.add('hidden');
+        });
+
+        document.getElementById('tab-password').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('tab-sms').classList.remove('active');
+            document.getElementById('form-password').classList.remove('hidden');
+            document.getElementById('form-sms').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
