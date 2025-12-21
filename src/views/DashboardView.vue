@@ -1,5 +1,14 @@
 <script setup>
-// No script logic needed for this static dashboard, but setup is good practice
+import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
+
+const router = useRouter()
+const store = useStore()
+
+const logout = () => {
+    store.dispatch('logout')
+    router.push({ name: 'login' })
+}
 </script>
 
 <template>
@@ -12,7 +21,7 @@
                     <router-link to="/dashboard"><i class="fas fa-home"></i> Accueil</router-link>
                     <a href="#"><i class="fas fa-file-invoice-dollar"></i> Fiches de Paie</a>
                     <a href="#"><i class="fas fa-user-circle"></i> Profil</a>
-                    <router-link to="/"><i class="fas fa-sign-out-alt"></i> Déconnexion</router-link>
+                    <a href="#" @click.prevent="logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
                 </nav>
             </div>
         </header>
