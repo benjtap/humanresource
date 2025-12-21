@@ -8,14 +8,30 @@ const router = createRouter({
         {
             path: '/',
             name: 'login',
-            component: LoginView
+            component: LoginView,
+            meta: { guest: true }
         },
         {
             path: '/dashboard',
             name: 'dashboard',
-            component: DashboardView
+            component: DashboardView,
+            meta: { requiresAuth: true }
         }
     ]
+})
+
+import store from '../store'
+
+router.beforeEach((to, from, next) => {
+    const isAuthenticated = store.getters.isAuthenticated
+
+    if (to.meta.requiresAuth && !isAuthenticated) {
+        next({ name: 'login' })
+    } else if (to.meta.guest && isAuthenticated) {
+        next({ name: 'dashboard' }) // Redirect to dashboard if already logged in
+    } else {
+        next()
+    }
 })
 
 export default router
