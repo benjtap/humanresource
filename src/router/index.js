@@ -16,6 +16,12 @@ const router = createRouter({
             name: 'dashboard',
             component: DashboardView,
             meta: { requiresAuth: true }
+        },
+        {
+            path: '/shifts',
+            name: 'shifts',
+            component: () => import('../views/ShiftsView.vue'),
+            meta: { requiresAuth: false } // Or false if testing without login
         }
     ]
 })

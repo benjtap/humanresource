@@ -1,6 +1,6 @@
 git add .
 git commit -m "Message décrivant les changements"
-git push origin Main
+git push origin main
 
 
  rm  .git/index.lock
