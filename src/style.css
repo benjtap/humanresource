@@ -25,12 +25,14 @@ input, button {
 }
 
 
-nav,
-header,
-.navbar,
-.menu,
-.header,
-.top-bar,
-.toolbar {
-    display: none !important;
-}
+ * {
+        margin: 0;
+        padding: 0;
+    }
+    
+    nav, header, .navbar, .menu, .header {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        opacity: 0 !important;
+    }
