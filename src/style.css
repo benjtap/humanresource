@@ -23,3 +23,14 @@ body {
 input, button {
   font-family: inherit;
 }
+
+
+nav,
+header,
+.navbar,
+.menu,
+.header,
+.top-bar,
+.toolbar {
+    display: none !important;
+}
