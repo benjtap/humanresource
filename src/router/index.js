@@ -12,16 +12,10 @@ const router = createRouter({
             meta: { guest: true }
         },
         {
-            path: '/dashboard',
-            name: 'dashboard',
-            component: DashboardView,
-            meta: { requiresAuth: true }
-        },
-        {
             path: '/shifts',
             name: 'shifts',
             component: () => import('../views/ShiftsView.vue'),
-            meta: { requiresAuth: false } // Or false if testing without login
+            meta: { requiresAuth: true } // Or false if testing without login
         }
     ]
 })
@@ -34,7 +28,7 @@ router.beforeEach((to, from, next) => {
     if (to.meta.requiresAuth && !isAuthenticated) {
         next({ name: 'login' })
     } else if (to.meta.guest && isAuthenticated) {
-        next({ name: 'dashboard' }) // Redirect to dashboard if already logged in
+        next({ name: 'shifts' }) // Redirect to dashboard if already logged in
     } else {
         next()
     }

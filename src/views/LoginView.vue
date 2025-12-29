@@ -61,6 +61,7 @@
                 placeholder="Ex: 123456"
                 autofocus
                 required
+                maxlength="6"
               />
             </div>
 
@@ -97,32 +98,42 @@ const handleIdentityCheck = async () => {
   isLoading.value = true
   try {
     // 1. Chained Request: Send ID and Phone to API endpoint
-    // Replace '/auth/check' with your actual endpoint
-    const response = await api.post('/auth/check', {
-      tehoudat_zehout: form.idNumber,
-      phone: form.phoneNumber
+    const response = await api.post('/auth/checkTZphone', {
+      idNumber: form.idNumber,
+      phoneNumber: form.phoneNumber
     })
     
-    // If successful match (concordance), show popup
-    // You might want to check response.data.success or similar depending on API
-    if (response.data) {
+    // Dans le cas de code 200 (et autres 2xx), Axios ne lance pas d'erreur, donc on continue ici
+    if (response.status === 200 && response.data) {
         showOtpModal.value = true
     }
     
   } catch (error) {
     console.error('Identity check failed:', error)
-    alert('Erreur lors de la vérification. Veuillez vérifier vos informations.')
+    
+    // Si il ya un message comme Axios Error message: 'Request failed with status code 401'
+    if (error.response && error.response.status === 401) {
+        alert("Les données envoyées sont invalides")
+    } else {
+        alert('Erreur lors de la vérification. Veuillez vérifier vos informations.')
+    }
   } finally {
     isLoading.value = false
   }
 }
 
 const handleCodeVerification = async () => {
+  // Validation : le code doit faire exactement 6 chiffres
+  if (!/^\d{6}$/.test(verificationCode.value)) {
+    alert('Le code doit contenir exactement 6 chiffres.')
+    return
+  }
+
   try {
     // 2. Post verification code
-    const response = await api.post('/auth/verify', {
-      code: verificationCode.value,
-      tehoudat_zehout: form.idNumber // Send context if needed
+    const response = await api.post('/auth/checkTZcode', {
+      random: verificationCode.value,
+      idNumber: form.idNumber // Send context if needed
     })
 
     // 3. If concordance, get JWT token
@@ -132,8 +143,8 @@ const handleCodeVerification = async () => {
       // 4. Store token in Vuex (which also sets the Axios header)
       store.dispatch('saveToken', token)
       
-      // Redirect to dashboard
-      router.push('/')
+      // Redirect to shifts page
+      router.push({ name: 'shifts' })
     } else {
         alert('Code invalide')
     }

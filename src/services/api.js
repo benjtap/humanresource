@@ -3,7 +3,7 @@ import store from '../store'
 
 // Create axios instance
 const api = axios.create({
-    baseURL: 'https://votre-api-url.com', // Replace with actual API URL
+    baseURL: import.meta.env.PROD ? 'https://selfapproj.onrender.com' : '/',
     headers: {
         'Content-Type': 'application/json'
     }
