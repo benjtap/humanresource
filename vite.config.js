@@ -7,7 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/auth': {
-        target: 'http://localhost:5000',
+        target: 'https://selfapproj.onrender.com',
+		targetold: 'http://localhost:5000',
         changeOrigin: true
       }
     }
