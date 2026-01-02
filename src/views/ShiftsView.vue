@@ -11,7 +11,13 @@
       <button class="icon-btn" @click.stop="isMenuOpen = true">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
-      <div class="spacer"></div>
+      
+      <!-- Center: Title or Timer -->
+      <div class="header-title-area">
+          <span v-if="activeShift && (isViewingActiveShiftMonth || currentTab === 'entry')">{{ activeShiftTimer }} | {{ activeShiftSalary }} ש"ח</span>
+          <span v-else></span> 
+      </div>
+
       <button class="icon-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       </button>
@@ -54,7 +60,7 @@
 
         <!-- Shifts List -->
         <div v-else-if="shifts.length > 0" class="shifts-list" key="list">
-          <div v-for="(shift, index) in shifts" :key="index" class="shift-row" :class="{ 'row-selected': selectedIndices.has(index) }" @click="handleRowClick(shift)">
+          <div v-for="(shift, index) in shifts" :key="index" class="shift-row" :class="{ 'row-selected': selectedIndices.has(index), 'row-active-red': shift.exit === '--:--' }" @click="handleRowClick(shift, index)">
             <div class="col-date">
               <div class="date-circle" :class="[shift.type, { selected: selectedIndices.has(index) }]" @click.stop="toggleSelection(index)">
                 <template v-if="selectedIndices.has(index)">
@@ -93,39 +99,7 @@
       </transition>
     </main>
 
-    <!-- FAB Overlay (captures clicks outside) -->
-    <transition name="fade">
-      <div v-if="isFabMenuOpen" class="fab-overlay" @click="isFabMenuOpen = false"></div>
-    </transition>
 
-      <!-- FAB Menu Options -->
-      <div class="fab-menu">
-        <transition-group name="fab-item">
-          <button 
-            v-for="(item, index) in fabOptions" 
-            :key="item.id"
-            class="fab-menu-item"
-            :style="{ transitionDelay: `${index * 100}ms` }"
-          >
-            <div class="menu-icon-circle" :class="item.iconClass">
-              <svg v-if="item.isSvg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="item.svgPath"></svg>
-              <span v-else class="currency-symbol">{{ item.textIcon }}</span>
-            </div>
-            <span class="menu-label">{{ item.label }}</span>
-            <div class="menu-handle">=</div>
-          </button>
-        </transition-group>
-      </div>
-
-      <!-- Floating Action Button -->
-      <button 
-        class="fab" 
-        :class="{ 'fab-rotate': isFabMenuOpen && !isSelectionMode, 'delete-mode': isSelectionMode }" 
-        @click.stop="handleFabClick"
-      >
-        <svg v-if="isSelectionMode" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      </button>
       </div>
 
       <!-- =======================
@@ -144,29 +118,37 @@
         <div class="shift-card-container">
            <div class="shift-card">
               <span class="card-label">בחר סוג משמרת:</span>
-              <button class="shift-type-selector">בוקר</button>
+              <button class="shift-type-selector" @click="openShiftTypeModal(true)">{{ activeShiftType }}</button>
 
-              <div class="shift-times-row">
-                 <div class="time-col">
-                   <span class="time-label">זמן כניסה</span>
-                   <span class="time-value">-- : --</span>
-                 </div>
-                 <div class="time-col">
-                   <span class="time-label">זמן יציאה</span>
-                   <span class="time-value">-- : --</span>
-                 </div>
-              </div>
-           </div>
-        </div>
+               <div class="shift-times-row">
+                  <div class="time-col">
+                    <span class="time-label">זמן כניסה</span>
+                    <span class="time-value">
+                       {{ activeShift ? activeShift.entry : '-- : --' }}
+                    </span>
+                  </div>
+                  <div class="time-col">
+                    <span class="time-label">זמן יציאה</span>
+                    <span class="time-value">-- : --</span>
+                  </div>
+               </div>
+            </div>
+         </div>
 
-        <div class="slider-container">
-           <button class="slider-btn">
-             <div class="slider-arrow">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><arrow-right points=""></arrow-right><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-             </div>
-             <span class="slider-text">גלול ימינה לכניסה</span>
-           </button>
-        </div>
+         <div class="slider-container" ref="sliderContainer">
+            <div class="slider-track">
+                <span class="slider-text">{{ sliderText }}</span>
+                <div 
+                  class="slider-thumb" 
+                  ref="sliderThumb"
+                  @mousedown="startDrag"
+                  @touchstart="startDrag"
+                  :style="{ transform: `translateX(${dragX}px)`, transition: isDragging ? 'none' : 'transform 0.3s ease' }"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0093AB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
+            </div>
+         </div>
 
       </div>
 
@@ -185,17 +167,17 @@
             
             <div class="detail-form-row">
                <label>תאריך:</label>
-               <input type="text" v-model="editingShift.fullDate" readonly class="input-box" />
+               <input type="text" :value="editingShift.fullDate" readonly class="input-box" @click="openDateModal" />
             </div>
 
             <div class="detail-form-row">
                <label>משמרת:</label>
-               <input type="text" v-model="editingShift.type" class="input-box" />
+               <input type="text" :value="editingShift.type" readonly class="input-box" @click="openShiftTypeModal(false)" />
             </div>
 
             <div class="detail-form-row">
                <label>כניסה:</label>
-               <input type="text" v-model="editingShift.entry" class="input-box" />
+               <input type="text" :value="editingShift.entry" readonly class="input-box" @click="openTimeModal('entry')" />
             </div>
 
             <div class="detail-form-row">
@@ -204,7 +186,7 @@
                  <input type="checkbox" class="inline-checkbox" />
                </label>
                <div class="input-with-icon">
-                 <input type="text" v-model="editingShift.exit" class="input-box" />
+                 <input type="text" :value="editingShift.exit" readonly class="input-box" @click="openTimeModal('exit')" />
                  <div class="icon-cancel-red">
                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="red" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
                  </div>
@@ -215,7 +197,7 @@
                <label>הפסקה:</label>
                <div class="input-with-unit">
                  <span class="unit-text">דק'</span>
-                 <input type="number" v-model="editingShift.break" class="input-box" />
+                 <input type="number" :value="editingShift.break" readonly class="input-box" @click="openBreakModal" />
                </div>
             </div>
 
@@ -223,7 +205,7 @@
                <label>תוספת יומית:</label>
                <div class="input-with-unit">
                  <span class="unit-text">ש"ח</span>
-                 <input type="number" v-model="editingShift.extra" class="input-box" />
+                 <input type="number" :value="editingShift.extra" readonly class="input-box" @click="openExtraModal" />
                </div>
             </div>
 
@@ -231,7 +213,7 @@
                <label>הורדה יומית:</label>
                <div class="input-with-unit">
                  <span class="unit-text">ש"ח</span>
-                 <input type="number" v-model="editingShift.deduction" class="input-box" />
+                 <input type="number" :value="editingShift.deduction" readonly class="input-box" @click="openDeductionModal" />
                </div>
             </div>
 
@@ -243,7 +225,7 @@
           </div>
 
           <div class="detail-footer">
-            <button class="footer-btn btn-delete" @click="closeDetailModal">
+            <button class="footer-btn btn-delete" @click="deleteShift" v-if="editingShiftIndex !== -1">
                <span>מחיקה</span>
                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
@@ -253,10 +235,250 @@
                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <div class="footer-divider"></div>
-            <button class="footer-btn btn-update" @click="closeDetailModal">
-               <span>עדכן</span>
+            <button class="footer-btn btn-update" @click="updateShift">
+               <span>{{ editingShiftIndex === -1 ? 'שמור' : 'עדכן' }}</span>
                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Break (הפסקה) Modal -->
+    <transition name="fade">
+      <div v-if="isBreakModalOpen" class="input-modal-overlay" @click.self="cancelBreakModal">
+        <div class="input-modal">
+          <div class="input-modal-title">הפסקה</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+            <p class="input-instruction">נא להכניס זמן הפסקה</p>
+            <input 
+                type="number" 
+                v-model="breakModalValue" 
+                class="modal-input" 
+                placeholder="זמן הפסקה בדקות"
+                ref="breakInputRef"
+            />
+            <div class="input-line"></div>
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmBreakModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelBreakModal">ביטול</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Extra (הוספה) Modal -->
+    <transition name="fade">
+      <div v-if="isExtraModalOpen" class="input-modal-overlay" @click.self="cancelExtraModal">
+        <div class="input-modal">
+          <div class="input-modal-title">הוספה</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+            <p class="input-instruction">נא להכניס הוספה יומית</p>
+            <input 
+                type="number" 
+                v-model="extraModalValue" 
+                class="modal-input" 
+                placeholder="הוספה יומית"
+                ref="extraInputRef"
+            />
+            <div class="input-line"></div>
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmExtraModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelExtraModal">ביטול</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Deduction (הורדה) Modal -->
+    <transition name="fade">
+      <div v-if="isDeductionModalOpen" class="input-modal-overlay" @click.self="cancelDeductionModal">
+        <div class="input-modal">
+          <div class="input-modal-title">הורדה</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+            <p class="input-instruction">נא להכניס הורדה יומית</p>
+            <input 
+                type="number" 
+                v-model="deductionModalValue" 
+                class="modal-input" 
+                placeholder="הורדה יומית"
+                ref="deductionInputRef"
+            />
+            <div class="input-line"></div>
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmDeductionModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelDeductionModal">ביטול</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Time Modal (Shared for Entry/Exit) -->
+    <transition name="fade">
+      <div v-if="isTimeModalOpen" class="input-modal-overlay" @click.self="cancelTimeModal">
+        <div class="input-modal">
+          <div class="input-modal-title">
+             {{ timeModalType === 'entry' ? 'זמן כניסה' : 'זמן יציאה' }}
+          </div>
+          <div class="input-title-divider"></div>
+          
+          <div class="time-modal-body">
+            <div class="time-picker-container">
+               <!-- Hours -->
+               <div class="time-column">
+                  <div class="time-cell prev" @click="adjustTime('hour', -1)">{{ prevHour }}</div>
+                  <div class="time-cell current">
+                    <input 
+                      type="number" 
+                      v-model="tempHour" 
+                      @blur="formatTimeInputs"
+                      class="time-input"
+                    />
+                  </div>
+                  <div class="time-cell next" @click="adjustTime('hour', 1)">{{ nextHour }}</div>
+               </div>
+               
+               <div class="time-colon">:</div>
+
+               <!-- Minutes -->
+               <div class="time-column">
+                  <div class="time-cell prev" @click="adjustTime('minute', -1)">{{ prevMinute }}</div>
+                  <div class="time-cell current">
+                    <input 
+                      type="number" 
+                      v-model="tempMinute" 
+                      @blur="formatTimeInputs"
+                      class="time-input"
+                    />
+                  </div>
+                  <div class="time-cell next" @click="adjustTime('minute', 1)">{{ nextMinute }}</div>
+               </div>
+            </div>
+            
+            <!-- Blue Dividers for current selection -->
+            <div class="time-selection-lines">
+               <div class="line top"></div>
+               <div class="line bottom"></div>
+            </div>
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmTimeModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelTimeModal">ביטול</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Shift Type (סוג משמרת) Modal -->
+    <transition name="fade">
+      <div v-if="isShiftTypeModalOpen" class="input-modal-overlay shift-selection-overlay" @click.self="cancelShiftTypeModal">
+        <div class="input-modal">
+          <div class="input-modal-title shift-type-title">
+             נא לבחור סוג משמרת
+          </div>
+          <div class="input-title-divider"></div>
+          
+          <div class="shift-type-body">
+             <label class="shift-type-option" @click.prevent="selectShiftType('בוקר')">
+               <span class="option-label">בוקר</span>
+               <input type="radio" :checked="tempShiftType === 'בוקר'" class="option-radio" readonly>
+             </label>
+             
+             <label class="shift-type-option" @click.prevent="selectShiftType('שישי')">
+               <span class="option-label">שישי</span>
+               <input type="radio" :checked="tempShiftType === 'שישי'" class="option-radio" readonly>
+             </label>
+
+             <label class="shift-type-option" @click.prevent="selectShiftType('לילה')">
+               <span class="option-label">לילה</span>
+               <input type="radio" :checked="tempShiftType === 'לילה'" class="option-radio" readonly>
+             </label>
+          </div>
+          
+           <!-- Footer hidden as usually radios close on select, but we keep buttons if multiple choices, but user image shows just list. Let's keep existing structure but maybe hide footer if auto-close? 
+                Actually user image shows a clean list. The existing code has footer buttons. Let's check user request. "I want it to display as in image".
+                Image shows modal with Title "נא לבחור סוג משמרת" (Blue), Line, and List. No footer in crop?
+                Wait, looking at full context, simple modals often have confirmation.
+                But the image screenshot shows the list. Let's make the list look exactly like it. Clean white.
+                We will keep the footer for now unless requested to remove.
+           -->
+           <div class="input-modal-footer">
+            <!-- Optional buttons if needed, but per image it looks like a selection list. Let's keep standard interaction -->
+           </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Date (תאריך) Modal -->
+    <transition name="fade">
+      <div v-if="isDateModalOpen" class="input-modal-overlay" @click.self="cancelDateModal">
+        <div class="input-modal">
+          <div class="input-modal-title">
+             תאריך
+          </div>
+          <div class="input-title-divider"></div>
+          
+          <div class="time-modal-body" style="direction: ltr;">
+            <div class="time-picker-container">
+               <!-- Month -->
+               <div class="time-column" style="width: 60px;">
+                  <div class="time-cell prev" @click="adjustDate('month', -1)">{{ prevMonthName }}</div>
+                  <div class="time-cell current">{{ currentMonthName }}</div>
+                  <div class="time-cell next" @click="adjustDate('month', 1)">{{ nextMonthName }}</div>
+               </div>
+               
+               <!-- Day -->
+               <div class="time-column">
+                  <div class="time-cell prev" @click="adjustDate('day', -1)">{{ prevDay }}</div>
+                  <div class="time-cell current">
+                    <input 
+                      type="number" 
+                      v-model="tempDay" 
+                      @blur="validateDateInputs"
+                      class="time-input"
+                    />
+                  </div>
+                  <div class="time-cell next" @click="adjustDate('day', 1)">{{ nextDay }}</div>
+               </div>
+
+               <!-- Year -->
+               <div class="time-column">
+                  <div class="time-cell prev" @click="adjustDate('year', -1)">{{ prevYear }}</div>
+                  <div class="time-cell current">
+                     <input 
+                      type="number" 
+                      v-model="tempYear" 
+                      class="time-input"
+                      style="width: 80px;" 
+                    />
+                  </div>
+                  <div class="time-cell next" @click="adjustDate('year', 1)">{{ nextYear }}</div>
+               </div>
+            </div>
+            
+            <!-- Blue Dividers -->
+            <div class="time-selection-lines">
+               <div class="line top"></div>
+               <div class="line bottom"></div>
+            </div>
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmDateModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelDateModal">ביטול</button>
           </div>
         </div>
       </div>
@@ -280,11 +502,100 @@
          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
          <span>משמרות</span>
        </button>
-       <button class="nav-item" :class="{ active: currentTab === 'entry' }" @click="currentTab = 'entry'">
-         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M12 14v4M10 16h4"/></svg>
-         <span>כניסה</span>
-       </button>
+        <button class="nav-item" :class="{ active: currentTab === 'entry' }" @click="currentTab = 'entry'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M12 14v4M10 16h4"/></svg>
+          <span>{{ (activeShift && (isViewingActiveShiftMonth || currentTab === 'entry')) ? 'יציאה' : 'כניסה' }}</span>
+        </button>
     </nav>
+
+    <!-- FAB Menu -->
+    <div v-if="isFabMenuOpen" class="fab-overlay" @click="isFabMenuOpen = false"></div>
+    <transition-group name="fab-item" tag="div" class="fab-menu">
+      <div 
+        v-for="(item, index) in fabOptions" 
+        :key="item.id" 
+        class="fab-menu-item" 
+        @click="handleFabItemClick(item)"
+        :style="{ transitionDelay: `${index * 150}ms` }"
+      >
+        <span class="menu-label">{{ item.label }}</span>
+        <span :class="['menu-icon-circle', item.iconClass]">
+           <svg v-if="item.isSvg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="item.svgPath"></svg>
+           <span v-else class="currency-symbol">{{ item.textIcon }}</span>
+        </span>
+      </div>
+    </transition-group>
+
+    <!-- FAB Button -->
+    <button class="fab" @click.stop="handleFabClick" :class="{ 'delete-mode': isSelectionMode, 'fab-rotate': isFabMenuOpen }">
+       <svg v-if="isSelectionMode" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+       <svg v-else xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
+    
+    <!-- Quick Shift Modal -->
+    <transition name="fade">
+      <div v-if="isQuickShiftModalOpen" class="input-modal-overlay" @click.self="closeQuickShiftModal">
+        <div class="input-modal quick-shift-modal" style="padding: 0; overflow: hidden;">
+          <div class="input-modal-header" style="background-color: #4DD0E1; color: white; padding: 15px; text-align: center;">
+             <span style="font-size: 1.1rem; font-weight: 500;">משמרת מהירה</span>
+          </div>
+          <div class="input-modal-body" style="padding: 20px;">
+             <div style="text-align: center; color: #777; margin-bottom: 10px;">נא לבחור משמרת מהירה:</div>
+             
+             <!-- Shift Type Selector (Teal Block) -->
+             <button class="shift-type-selector-quick" @click.stop="openShiftTypeModal(true)" style="width: 100%; background-color: #0093AB; color: white; padding: 12px; border: none; border-radius: 4px; margin-bottom: 20px; font-size: 1.1rem; cursor: pointer;">
+                {{ activeShiftType }}
+             </button>
+             
+             <!-- Calendar -->
+             <div class="calendar-container" style="border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+                 <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 10px; direction: ltr;">
+                    <button @click="prevQuickMonth" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color:#333;">&lt;</button>
+                    <span style="font-weight: bold; font-size: 1.1rem; color: #555;">{{ quickShiftMonthLabel }}</span>
+                    <button @click="nextQuickMonth" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color:#333;">&gt;</button>
+                 </div>
+                 
+                 <!-- Days Header -->
+                 <div class="calendar-grid-header" style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 10px; font-weight: bold; color: white; background-color: #0093AB; padding: 8px 0; direction: rtl;">
+                    <div>א</div><div>ב</div><div>ג</div><div>ד</div><div>ה</div><div>ו</div><div>ש</div>
+                 </div>
+                 
+                 <!-- Days Grid -->
+                 <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; direction: rtl;">
+                     <div v-for="(day, idx) in quickShiftGrid" :key="idx" 
+                          class="calendar-day" 
+                          :class="{ 'empty': !day, 'pressing': pressingDay === day }"
+                          @mousedown="startPress(day)"
+                          @touchstart="startPress(day)"
+                          @mouseup="endPress(day)"
+                          @touchend="endPress(day)"
+                          @mouseleave="cancelPress"
+                          @touchcancel="cancelPress"
+                          style="height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-weight: 500; user-select: none;"
+                     >
+                        {{ day }}
+                     </div>
+                 </div>
+             </div>
+             
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Toast Notification -->
+    <transition name="fade-fast">
+        <div v-if="toastVisible" class="toast-notification">
+            <div class="toast-content">
+                <div class="toast-icon-wrapper">
+                   <!-- Icon: Info or Check -->
+                   <svg v-if="toastType === 'success'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                   <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+                <div class="toast-text">{{ toastMessage }}</div>
+            </div>
+        </div>
+    </transition>
 
     <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" v-if="isMenuOpen" @click="isMenuOpen = false"></div>
@@ -312,12 +623,12 @@
 
       <!-- Menu Items -->
       <div class="menu-items">
-        <a href="#" class="menu-item">
+        <router-link to="/shifts" class="menu-item" @click="isMenuOpen = false; currentTab = 'shifts'">
           <span class="item-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
           </span>
           <span>משמרות</span>
-        </a>
+        </router-link>
         <a href="#" class="menu-item">
           <span class="item-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
@@ -378,7 +689,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, nextTick, onMounted, onUnmounted } from 'vue';
 
 const isMenuOpen = ref(false);
 const isFabMenuOpen = ref(false);
@@ -426,33 +737,722 @@ const editingShift = reactive({
   notes: ''
 });
 
-const handleRowClick = (shift) => {
-  // If in selection mode, maybe row click should select? User requested "simple click on row makes screen appear".
-  // Let's assume selection mode strictly requires clicking the circle as implemented in toggleSelection.
-  // But if the user wants row click to open modal, we normally prevent conflicts.
-  // We'll allow opening modal unless we are explicitly clicking the circle (handled by @click.stop on circle).
+
+
+const editingShiftIndex = ref(-1);
+
+const handleRowClick = (shift, index) => {
+  editingShiftIndex.value = index;
   
   // Populate
-  editingShift.fullDate = `24/12/2025`; // logic to build full date from partial
-  // For demo, let's map:
-  editingShift.fullDate = `${shift.dayNumber}/12/2025`; // simplistic
-  editingShift.type = 'בוקר'; // default or from shift data
+  const m = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+  const y = currentDate.value.getFullYear();
+  editingShift.fullDate = shift.fullDate || `${shift.dayNumber}/${m}/${y}`;
+  editingShift.type = shift.type || 'בוקר'; 
   editingShift.entry = shift.entry;
   editingShift.exit = shift.exit;
-  editingShift.break = 0;
-  editingShift.extra = 0.0;
-  editingShift.deduction = 0.0;
+  editingShift.break = shift.break || 0;
+  editingShift.extra = shift.extra || 0.0;
+  editingShift.deduction = shift.deduction || 0.0;
   
   isDetailModalOpen.value = true;
+};
+
+const calculateShiftData = (shiftData) => {
+    // Basic calculation for Hours and Salary
+    let hoursStr = '0:00';
+    let salaryStr = '0.00';
+    
+    // Only calculate if we have full times
+    if (shiftData.entry && shiftData.exit && shiftData.entry !== '--:--' && shiftData.exit !== '--:--') {
+        const [h1, m1] = shiftData.entry.split(':').map(Number);
+        const [h2, m2] = shiftData.exit.split(':').map(Number);
+        const d1 = new Date(0,0,0, h1, m1);
+        const d2 = new Date(0,0,0, h2, m2);
+        
+        let diffMs = d2 - d1;
+        if (diffMs < 0) diffMs += 24 * 3600 * 1000; // overnight
+        
+        // Subtract break
+        diffMs -= (shiftData.break || 0) * 60 * 1000;
+        if (diffMs < 0) diffMs = 0;
+        
+        const h = Math.floor(diffMs / 3600000);
+        const m = Math.floor((diffMs % 3600000) / 60000);
+        
+        hoursStr = `${h}:${m.toString().padStart(2,'0')}`;
+        
+        // Salary
+        const hoursFloat = diffMs / 3600000;
+        const rate = 50; // hardcoded
+        let val = hoursFloat * rate;
+        
+        val += parseFloat(shiftData.extra || 0);
+        val -= parseFloat(shiftData.deduction || 0);
+        
+        if (val < 0) val = 0;
+        salaryStr = val.toFixed(2);
+    }
+    
+    return { hoursStr, salaryStr };
+};
+
+const checkOverlap = (candidate, ignoreIdx, shiftsList = shifts.value, referenceDate = currentDate.value) => {
+    const getRange = (s) => {
+        let dStr = s.fullDate;
+        if (!dStr) {
+             const d = s.dayNumber.toString().padStart(2, '0');
+             const m = (referenceDate.getMonth() + 1).toString().padStart(2, '0');
+             const y = referenceDate.getFullYear();
+             dStr = `${d}/${m}/${y}`;
+        }
+        const [day, mon, yr] = dStr.split('/').map(Number);
+        
+        if (!s.entry || !s.exit || s.entry === '--:--' || s.exit === '--:--') return null;
+        
+        const [h1, m1] = s.entry.split(':').map(Number);
+        const [h2, m2] = s.exit.split(':').map(Number);
+        
+        const start = new Date(yr, mon - 1, day, h1, m1);
+        let end = new Date(yr, mon - 1, day, h2, m2);
+        
+        if (end <= start) end.setDate(end.getDate() + 1);
+        
+        return { start: start.getTime(), end: end.getTime() };
+    };
+
+    const candRange = getRange(candidate);
+    if (!candRange) return false;
+
+    return shiftsList.some((s, i) => {
+        if (i === ignoreIdx) return false;
+        const r = getRange(s);
+        if (!r) return false;
+        return (candRange.start < r.end && candRange.end > r.start);
+    });
+};
+
+const updateShift = () => {
+    if (checkOverlap(editingShift, editingShiftIndex.value)) {
+        alert('שגיאה: חפיפה בשעות המשמרת עם משמרת קיימת');
+        return;
+    }
+
+    // If index is -1, it's a NEW shift
+    const { hoursStr, salaryStr } = calculateShiftData(editingShift);
+
+    if (editingShiftIndex.value === -1) {
+        // Create New object
+        // We need dayNumber and dayName from fullDate
+        // fullDate is DD/MM/YYYY
+        const [d, mStr, y] = editingShift.fullDate.split('/');
+        const dateObj = new Date(y, parseInt(mStr)-1, d);
+        const dayName = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).format(dateObj).replace('יום ', '');
+        
+        const newShift = {
+            dayNumber: d,
+            dayName: dayName,
+            type: editingShift.type,
+            entry: editingShift.entry,
+            exit: editingShift.exit,
+            break: editingShift.break,
+            extra: editingShift.extra,
+            deduction: editingShift.deduction,
+            fullDate: editingShift.fullDate,
+            hours: hoursStr,
+            salary: salaryStr,
+            isVacation: false
+        };
+        
+        shifts.value.push(newShift);
+        
+    } else {
+        // Update existing
+        const updatedShift = {
+            ...shifts.value[editingShiftIndex.value], // keep dayNumber etc
+            type: editingShift.type,
+            entry: editingShift.entry,
+            exit: editingShift.exit,
+            break: editingShift.break,
+            extra: editingShift.extra,
+            deduction: editingShift.deduction,
+            fullDate: editingShift.fullDate,
+            hours: hoursStr,
+            salary: salaryStr
+        };
+        
+        shifts.value[editingShiftIndex.value] = updatedShift;
+        
+        // If we just updated the active shift, we might need to sync it?
+        if (activeShift.value && shifts.value.indexOf(activeShift.value) === -1) {
+             // Logic to re-sync if needed
+        }
+    }
+    
+    closeDetailModal();
+};
+
+const deleteShift = () => {
+    if (editingShiftIndex.value === -1) return;
+    
+    if (confirm("להסיר משמרת זו?")) {
+        // Check if removing active shift
+        if (shifts.value[editingShiftIndex.value] === activeShift.value) {
+            activeShift.value = null; // stop timer logic
+        }
+        shifts.value.splice(editingShiftIndex.value, 1);
+        closeDetailModal();
+    }
 };
 
 const closeDetailModal = () => {
     isDetailModalOpen.value = false;
 };
 
+// Break Modal Logic
+const isBreakModalOpen = ref(false);
+const breakModalValue = ref('');
+const breakInputRef = ref(null);
+
+const openBreakModal = () => {
+  breakModalValue.value = editingShift.break;
+  isBreakModalOpen.value = true;
+  nextTick(() => {
+    breakInputRef.value?.focus();
+  });
+};
+
+const confirmBreakModal = () => {
+    editingShift.break = breakModalValue.value; 
+    isBreakModalOpen.value = false;
+};
+
+const cancelBreakModal = () => {
+    isBreakModalOpen.value = false;
+};
+
+// Extra Modal Logic
+const isExtraModalOpen = ref(false);
+const extraModalValue = ref('');
+const extraInputRef = ref(null);
+
+const openExtraModal = () => {
+  extraModalValue.value = editingShift.extra;
+  isExtraModalOpen.value = true;
+  nextTick(() => {
+    extraInputRef.value?.focus();
+  });
+};
+
+const confirmExtraModal = () => {
+    editingShift.extra = extraModalValue.value; 
+    isExtraModalOpen.value = false;
+};
+
+const cancelExtraModal = () => {
+    isExtraModalOpen.value = false;
+};
+
+// Deduction Modal Logic
+const isDeductionModalOpen = ref(false);
+const deductionModalValue = ref('');
+const deductionInputRef = ref(null);
+
+const openDeductionModal = () => {
+  deductionModalValue.value = editingShift.deduction;
+  isDeductionModalOpen.value = true;
+  nextTick(() => {
+    deductionInputRef.value?.focus();
+  });
+};
+
+const confirmDeductionModal = () => {
+    editingShift.deduction = deductionModalValue.value; 
+    isDeductionModalOpen.value = false;
+};
+
+const cancelDeductionModal = () => {
+    isDeductionModalOpen.value = false;
+};
+
+// Time Modal Logic (Entry/Exit)
+const isTimeModalOpen = ref(false);
+const timeModalType = ref('entry'); // 'entry' or 'exit'
+const tempHour = ref('00');
+const tempMinute = ref('00');
+
+// Computed neighbors for visual spinner effect
+const prevHour = computed(() => {
+  const h = parseInt(tempHour.value);
+  const val = (h + 1) % 24; // Image shows ascending order upwards? Actually normally standard is: Top=Prev, Bottom=Next.
+  // User image: Center 07. Top 06. Bottom 08.
+  // So Top is (Current - 1), Bottom is (Current + 1).
+  const prev = (h - 1 + 24) % 24;
+  return prev.toString().padStart(2, '0');
+});
+
+const nextHour = computed(() => {
+  const h = parseInt(tempHour.value);
+  const next = (h + 1) % 24;
+  return next.toString().padStart(2, '0');
+});
+
+const prevMinute = computed(() => {
+  const m = parseInt(tempMinute.value);
+  const prev = (m - 1 + 60) % 60;
+  return prev.toString().padStart(2, '0');
+});
+
+const nextMinute = computed(() => {
+  const m = parseInt(tempMinute.value);
+  const next = (m + 1) % 60;
+  return next.toString().padStart(2, '0');
+});
+
+const openTimeModal = (type) => {
+  timeModalType.value = type;
+  const timeStr = type === 'entry' ? editingShift.entry : editingShift.exit;
+  if (timeStr && timeStr.includes(':')) {
+    const [h, m] = timeStr.split(':');
+    tempHour.value = h;
+    tempMinute.value = m;
+  } else {
+    const now = new Date();
+    tempHour.value = now.getHours().toString().padStart(2, '0');
+    tempMinute.value = now.getMinutes().toString().padStart(2, '0');
+  }
+  isTimeModalOpen.value = true;
+};
+
+const adjustTime = (unit, delta) => {
+    // Note: If Top is PREV (Current-1) and I click Top, do I want to GO to that number?
+    // Usually clicking "06" above "07" means "Select 06".
+    // "06" is (Current - 1). So delta should be -1.
+    // However, the Image shows Top=06, Center=07, Bottom=08.
+    // If I click 06 (Top), I want to Decrement.
+    // My template calls adjustTime('hour', 1) for prev. 
+    // Let's fix template logic -> Top is Prev -> Decrement.
+    // Wait, let's just make adjustTime handle the visually intuitive action.
+    
+    if (unit === 'hour') {
+        let val = parseInt(tempHour.value) + delta; // delta should be -1 for top, +1 for bottom
+        val = (val + 24) % 24;
+        tempHour.value = val.toString().padStart(2, '0');
+    } else {
+        let val = parseInt(tempMinute.value) + delta;
+        val = (val + 60) % 60;
+        tempMinute.value = val.toString().padStart(2, '0');
+    }
+};
+
+const formatTimeInputs = () => {
+    // Ensure 2 digits
+    let h = parseInt(tempHour.value);
+    if (isNaN(h)) h = 0;
+    tempHour.value = Math.min(23, Math.max(0, h)).toString().padStart(2, '0');
+
+    let m = parseInt(tempMinute.value);
+    if (isNaN(m)) m = 0;
+    tempMinute.value = Math.min(59, Math.max(0, m)).toString().padStart(2, '0');
+};
+
+const confirmTimeModal = () => {
+    formatTimeInputs();
+    const finalTime = `${tempHour.value}:${tempMinute.value}`;
+    
+    if (timeModalType.value === 'exit') {
+        // Validation: Exit > Entry
+        // Compare "HH:MM" strings works for 24h format if padded correctly
+        if (finalTime <= editingShift.entry) {
+             alert('שגיאה: זמן יציאה חייב להיות גדול מזמן כניסה');
+             return;
+        }
+        editingShift.exit = finalTime;
+    } else {
+        editingShift.entry = finalTime;
+    }
+    
+    isTimeModalOpen.value = false;
+};
+
+const cancelTimeModal = () => {
+    isTimeModalOpen.value = false;
+};
+
+// Shift Type Modal Logic
+const isShiftTypeModalOpen = ref(false);
+const tempShiftType = ref('');
+const isEntryMode = ref(false);
+const activeShiftType = ref('בוקר');
+
+const openShiftTypeModal = (forEntry = false) => {
+  isEntryMode.value = forEntry;
+  if (forEntry) {
+      tempShiftType.value = activeShiftType.value;
+  } else {
+      tempShiftType.value = editingShift.type || 'בוקר';
+  }
+  isShiftTypeModalOpen.value = true;
+};
+
+const confirmShiftTypeModal = () => {
+  if (isEntryMode.value) {
+      activeShiftType.value = tempShiftType.value;
+  } else {
+      editingShift.type = tempShiftType.value;
+  }
+  if (isEntryMode.value && activeShiftType.value !== tempShiftType.value) {
+      activeShiftType.value = tempShiftType.value;
+  } else if (!isEntryMode.value && editingShift.type !== tempShiftType.value) {
+      editingShift.type = tempShiftType.value;
+  }
+  isShiftTypeModalOpen.value = false;
+};
+
+// Watch for temp change to auto-close if mimicking native like behavior or just waiting for selection?
+// Image shows radios. User said "when I click morning". It implies immediate action? 
+// The image shows radio buttons UNSELECTED or SELECTED.
+// But lets make it select-and-close if desired, or just standard.
+// "Rectificatif, lorsque l on clique sur בוקר, je veux que s affiche tel que dans l image"
+// This means: "Correction, when I click on 'Morning', I want it to display AS IN THE IMAGE".
+// The image SHOWS a modal with 'Morning', 'Friday', 'Night' with radio buttons.
+// This modal appears presumably after clicking the "Shift Type" (Morning) button.
+// So the request is about the STYLE of this modal.
+// I have removed the footer buttons to clean it up, but we need a way to close/confirm.
+// Let's attach the click action on the Label to confirm immediately?
+// Or keep it simple: Select -> Auto Confirm?
+// Let's modify the template to call confirm on change.
+
+const selectShiftType = (type) => {
+    tempShiftType.value = type;
+    confirmShiftTypeModal();
+};
+
+const cancelShiftTypeModal = () => {
+  isShiftTypeModalOpen.value = false;
+};
+
+// Date Modal Logic
+const isDateModalOpen = ref(false);
+const tempDay = ref(1);
+const tempMonth = ref(0); // 0-11
+const tempYear = ref(2025);
+
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const mapMonthName = (idx) => monthNames[(idx + 12) % 12];
+
+const prevMonthName = computed(() => mapMonthName(tempMonth.value - 1));
+const currentMonthName = computed(() => mapMonthName(tempMonth.value));
+const nextMonthName = computed(() => mapMonthName(tempMonth.value + 1));
+
+const prevDay = computed(() => {
+    const d = tempDay.value - 1;
+    return d < 1 ? 31 : d; // Simplified cyclic
+});
+const nextDay = computed(() => {
+    const d = tempDay.value + 1;
+    return d > 31 ? 1 : d;
+});
+const prevYear = computed(() => tempYear.value - 1);
+const nextYear = computed(() => tempYear.value + 1);
+
+const openDateModal = () => {
+    // Parse current date "DD/MM/YYYY" -- Note: In handleRowClick we set it as `${shift.dayNumber}/12/2025` or similar.
+    // Let's protect against empty string
+    const dateStr = editingShift.fullDate;
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        tempDay.value = parseInt(parts[0]);
+        tempMonth.value = parseInt(parts[1]) - 1; // 0-based
+        tempYear.value = parseInt(parts[2]);
+    } else {
+        const now = new Date();
+        tempDay.value = now.getDate();
+        tempMonth.value = now.getMonth();
+        tempYear.value = now.getFullYear();
+    }
+    isDateModalOpen.value = true;
+};
+
+const adjustDate = (unit, delta) => {
+    if (unit === 'month') {
+        let m = tempMonth.value + delta;
+        tempMonth.value = (m + 12) % 12;
+    } else if (unit === 'day') {
+        let d = tempDay.value + delta;
+        // Simple 1-31 cycle for now, could be smarter based on month
+        if (d < 1) d = 31;
+        if (d > 31) d = 1;
+        tempDay.value = d;
+    } else if (unit === 'year') {
+        tempYear.value += delta;
+    }
+};
+
+const validateDateInputs = () => {
+    // Basic clamping
+    if (tempDay.value < 1) tempDay.value = 1;
+    if (tempDay.value > 31) tempDay.value = 31;
+};
+
+const confirmDateModal = () => {
+    // Save back as DD/MM/YYYY
+    const d = tempDay.value.toString().padStart(2, '0');
+    const m = (tempMonth.value + 1).toString().padStart(2, '0');
+    const y = tempYear.value;
+    editingShift.fullDate = `${d}/${m}/${y}`;
+    isDateModalOpen.value = false;
+};
+
+const cancelDateModal = () => {
+    isDateModalOpen.value = false;
+};
+
 // Entry View Data
-const currentTime = ref('20 31');
-const currentDateString = ref("יום שני, ט' טבת ה'תשפ\"ו | 29/12/2025");
+const currentTime = ref('');
+const currentDateString = ref('');
+
+const updateClock = () => {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    currentTime.value = `${h} ${m}`;
+    
+    // Date: Hebrew Date + DD/MM/YYYY
+    // Simple robust formatting
+    try {
+        const jewishParts = new Intl.DateTimeFormat('he-IL', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }).formatToParts(now);
+        // reconstruct
+        // e.g. "יום חמישי", " ", "י״א", " ", "בטבת", " ", "תשפ״ו"
+        const dayName = jewishParts.find(p => p.type === 'weekday')?.value || '';
+        const day = jewishParts.find(p => p.type === 'day')?.value || '';
+        const month = jewishParts.find(p => p.type === 'month')?.value || '';
+        const year = jewishParts.find(p => p.type === 'year')?.value || '';
+        
+        const jewishDateStr = `${dayName}, ${day} ${month} ${year}`;
+        
+        const d = now.getDate().toString().padStart(2, '0');
+        const mo = (now.getMonth() + 1).toString().padStart(2, '0');
+        const y = now.getFullYear();
+        const gregorianDate = `${d}/${mo}/${y}`;
+        
+        currentDateString.value = `${jewishDateStr} | ${gregorianDate}`;
+    } catch (e) {
+        currentDateString.value = now.toLocaleDateString('he-IL') + ' | ' + now.toLocaleDateString('en-GB');
+    }
+};
+
+let clockInterval = null;
+
+onMounted(() => {
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000);
+});
+
+// Active Shift Logic
+const activeShift = ref(null);
+const activeShiftTimer = ref('00:00:00');
+const activeShiftSalary = ref('0.00');
+let timerInterval = null;
+
+const startTimer = (startTime) => {
+    if (timerInterval) clearInterval(timerInterval);
+    
+    // Parse startTime HH:MM
+    const [startH, startM] = startTime.split(':').map(Number);
+    const startObj = new Date();
+    startObj.setHours(startH, startM, 0, 0);
+
+    timerInterval = setInterval(() => {
+        const now = new Date();
+        const diff = now - startObj;
+        
+        // Format HH:MM:SS
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        
+        activeShiftTimer.value = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        
+        const secondsTotal = diff / 1000;
+        const hourlyRate = 50; 
+        const salary = (secondsTotal / 3600) * hourlyRate;
+        activeShiftSalary.value = salary.toFixed(2);
+        
+    }, 1000);
+};
+
+const handleEntry = () => {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    const entryTime = `${h}:${m}`;
+    const dayName = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).format(now).replace('יום ', '');
+    const dayNumber = now.getDate().toString();
+    
+    // Constraint: We only allow adding if the viewed month matches current month. 
+    // This check is now done in handleSliderAction before calling this.
+    // We removed the auto-switch logic.
+    
+    const newShift = reactive({ 
+        dayNumber: dayNumber, 
+        dayName: dayName, 
+        entry: entryTime, 
+        exit: '--:--', 
+        hours: '0:00', 
+        salary: '0.00', 
+        isVacation: false, 
+        type: activeShiftType.value,
+        fullDate: new Intl.DateTimeFormat('en-GB').format(now),
+        break: 0,
+        extra: 0,
+        deduction: 0
+    });
+    
+    shifts.value.push(newShift);
+    
+    // Set Active
+    activeShift.value = newShift;
+    startTimer(entryTime);
+
+    // 2. Wait 2 seconds then Switch to shifts tab
+    setTimeout(() => {
+        currentTab.value = 'shifts';
+    }, 2000);
+};
+
+onUnmounted(() => {
+    if (timerInterval) clearInterval(timerInterval);
+    if (clockInterval) clearInterval(clockInterval);
+});
+
+// Slider Logic
+const sliderContainer = ref(null);
+const dragX = ref(0);
+const isDragging = ref(false);
+
+const sliderText = computed(() => activeShift.value ? 'גלול ימינה ליציאה' : 'גלול ימינה לכניסה');
+
+const startDrag = (e) => {
+    isDragging.value = true;
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchmove', onDrag);
+    window.addEventListener('touchend', endDrag);
+};
+
+const onDrag = (e) => {
+    if (!isDragging.value) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const container = sliderContainer.value.getBoundingClientRect();
+    const startX = container.left; // Thumb starts at left
+    
+    // In RTL, "Right" is actually negative direction usually, but let's check visual layout.
+    // The image shows Arrow on LEFT, Text on RIGHT.
+    // "Slide to Right" -> arrow moves -> right.
+    // LTR coordinates: x increases to right.
+    
+    let x = clientX - startX - 25; // center offset approx
+    const max = container.width - 56; // width of thumb
+    
+    if (x < 0) x = 0;
+    if (x > max) x = max;
+    
+    dragX.value = x;
+};
+
+const endDrag = () => {
+    if (!isDragging.value) return;
+    isDragging.value = false;
+    window.removeEventListener('mousemove', onDrag);
+    window.removeEventListener('mouseup', endDrag);
+    window.removeEventListener('touchmove', onDrag);
+    window.removeEventListener('touchend', endDrag);
+    
+    // Check threshold
+    const container = sliderContainer.value.getBoundingClientRect();
+    const max = container.width - 56;
+    
+    if (dragX.value > max * 0.8) {
+        // Trigger
+        dragX.value = max; // snap to end
+        handleSliderAction();
+        // Reset after delay handled by action
+    } else {
+        // Reset
+        dragX.value = 0;
+    }
+};
+
+const handleSliderAction = () => {
+    if (activeShift.value) {
+        // Exit Logic
+        const now = new Date();
+        const h = now.getHours().toString().padStart(2, '0');
+        const m = now.getMinutes().toString().padStart(2, '0');
+        const exitTime = `${h}:${m}`;
+        
+        activeShift.value.exit = exitTime;
+        const { hoursStr, salaryStr } = calculateShiftData(activeShift.value);
+        activeShift.value.hours = hoursStr;
+        activeShift.value.salary = salaryStr;
+        
+        if (timerInterval) clearInterval(timerInterval);
+        
+        setTimeout(() => {
+            activeShift.value = null; 
+            activeShiftTimer.value = '00:00:00';
+            activeShiftSalary.value = '0.00';
+            dragX.value = 0; // Reset slider position
+            currentTab.value = 'shifts';
+        }, 1500);
+
+    } else {
+        // Entry Validation
+        const now = new Date();
+        const viewingMonth = currentDate.value.getMonth();
+        const viewingYear = currentDate.value.getFullYear();
+        
+        const isSameMonth = now.getMonth() === viewingMonth && now.getFullYear() === viewingYear;
+        
+        if (!isSameMonth) {
+             // Auto-switch to current month instead of blocking
+             currentDate.value = now;
+             
+             // Wait for fetch to complete before adding the new shift to avoid overwrite
+             fetchShifts(now).then(() => {
+                 handleEntry();
+                 setTimeout(() => { dragX.value = 0; }, 2000); 
+             });
+             return;
+        }
+
+        // Already on same month
+        handleEntry(); 
+        setTimeout(() => { dragX.value = 0; }, 2000); 
+    }
+};
+
+
+
+const isViewingActiveShiftMonth = computed(() => {
+    if (!activeShift.value) return false;
+    
+    // activeShift.fullDate is "DD/MM/YYYY" (from en-GB formatting)
+    const [d, m, y] = activeShift.value.fullDate.split('/');
+    const activeMonth = parseInt(m) - 1; // 0-based
+    const activeYear = parseInt(y);
+    
+    const viewingMonth = currentDate.value.getMonth();
+    const viewingYear = currentDate.value.getFullYear();
+    
+    return activeMonth === viewingMonth && activeYear === viewingYear;
+});
+
+// Entry Tab specific shift type selector state
+// Entry Tab specific shift type selector state
+// activeShiftType defined earlier
 
 const menuItems = [
   {
@@ -460,14 +1460,16 @@ const menuItems = [
     label: 'משמרת מהירה',
     iconClass: 'red',
     isSvg: true,
-    svgPath: '<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>',
+    // History / Restore icon
+    svgPath: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"></path><path d="M3 3v9h9"></path>',
   },
   {
     id: 2,
     label: 'משמרת חדשה',
     iconClass: 'teal',
     isSvg: true,
-    svgPath: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="12" y1="16" x2="12" y2="22"></line><line x1="9" y1="19" x2="15" y2="19"></line>',
+    // Calendar Plus
+    svgPath: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M10 16h4"/><path d="M12 14v4"/>',
   },
   {
     id: 3,
@@ -510,6 +1512,12 @@ const mockData = {
     { dayNumber: '29', dayName: 'שני',   entry: '07:00', exit: '16:15', hours: '9:15', salary: '430.31', isVacation: false, type: 'regular' },
   ],
   // Add more months if needed
+  '2026-01': [
+    { dayNumber: '02', dayName: 'שישי', entry: '08:00', exit: '14:00', hours: '6:00', salary: '300.00', isVacation: false, type: 'שישי' },
+    { dayNumber: '04', dayName: 'ראשון', entry: '07:00', exit: '16:00', hours: '9:00', salary: '450.00', isVacation: false, type: 'בוקר' },
+    { dayNumber: '05', dayName: 'שני',   entry: '22:00', exit: '06:00', hours: '8:00', salary: '400.00', isVacation: false, type: 'לילה' },
+    { dayNumber: '08', dayName: 'חמישי', entry: '08:00', exit: '17:00', hours: '9:00', salary: '450.00', isVacation: false, type: 'בוקר' },
+  ],
 };
 
 const shifts = ref([]);
@@ -537,16 +1545,19 @@ const totalSalary = computed(() => {
 
 // Fetch Data
 const fetchShifts = (date) => {
-  isLoading.value = true;
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const key = `${year}-${month}`;
+  return new Promise((resolve) => {
+      isLoading.value = true;
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const key = `${year}-${month}`;
 
-  // Simulate API delay
-  setTimeout(() => {
-    shifts.value = mockData[key] || [];
-    isLoading.value = false;
-  }, 500); // 500ms delay
+      // Simulate API delay
+      setTimeout(() => {
+        shifts.value = mockData[key] || [];
+        isLoading.value = false;
+        resolve();
+      }, 500); // 500ms delay
+  });
 };
 
 // Initial Fetch
@@ -589,6 +1600,7 @@ const nextMonth = () => {
   const d = new Date(currentDate.value);
   d.setMonth(d.getMonth() + 1);
   currentDate.value = d;
+  activeShiftType.value = 'בוקר';
   fetchShifts(d);
 };
 
@@ -597,7 +1609,204 @@ const prevMonth = () => {
   const d = new Date(currentDate.value);
   d.setMonth(d.getMonth() - 1);
   currentDate.value = d;
+  activeShiftType.value = 'בוקר';
   fetchShifts(d);
+};
+
+// Quick Shift Modal Logic
+const isQuickShiftModalOpen = ref(false);
+const quickShiftDate = ref(new Date());
+
+const quickShiftMonthLabel = computed(() => {
+    const d = quickShiftDate.value;
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const y = d.getFullYear();
+    return `${m}/${y}`;
+});
+
+const prevQuickMonth = () => {
+    const d = new Date(quickShiftDate.value);
+    d.setMonth(d.getMonth() - 1);
+    quickShiftDate.value = d;
+};
+
+const nextQuickMonth = () => {
+    const d = new Date(quickShiftDate.value);
+    d.setMonth(d.getMonth() + 1);
+    quickShiftDate.value = d;
+};
+
+const quickShiftGrid = computed(() => {
+    const y = quickShiftDate.value.getFullYear();
+    const m = quickShiftDate.value.getMonth();
+    const firstDay = new Date(y, m, 1).getDay(); // 0=Sunday
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    
+    let days = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    return days;
+});
+
+const handleQuickDayClick = (day) => {
+    if (!day) return;
+    
+    // Create Quick Shift for this date
+    const d = new Date(quickShiftDate.value);
+    d.setDate(day);
+    
+    const h = "08"; // Default Start? Or current time? "Quick Shift" usually implies template.
+    // Let's assume default 8 hours? Or just empty?
+    // User wants "Quick Shift". Let's use the parameters from Image 2? 
+    // Image 2 is just the modal. 
+    // Let's create a basic shift entry.
+    
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const y = d.getFullYear();
+    const dayStr = day.toString();
+    const parts = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).formatToParts(d);
+    const dayName = parts.find(p => p.type === 'weekday')?.value || '';
+    
+    const newShift = {
+        dayNumber: dayStr,
+        dayName: dayName.replace('יום ', ''),
+        entry: '08:00', // Mock defaults
+        exit: '16:00',
+        hours: '8:00',
+        salary: '0.00',
+        type: activeShiftType.value, // "בוקר" from modal selector
+        fullDate: `${day.toString().padStart(2,'0')}/${m}/${y}`,
+        break: 0,
+        extra: 0,
+        deduction: 0
+    };
+
+    // Check Overlap
+    const key = `${y}-${m}`;
+    const targetList = mockData[key] || [];
+    if (checkOverlap(newShift, -1, targetList, quickShiftDate.value)) {
+         showToast('error', 'שגיאה: המשמרת חופפת למשמרת קיימת');
+         return;
+    }
+    
+    // Add to mockData if it's not the currently viewed list (shifts.value references mockData[viewed], so if we are viewing other month, we need to push to mockData directly)
+    // Actually shifts.value IS mockData[currentKey]. 
+    // If targetList is shifts.value (same month), we push to shifts.value (reactive).
+    // If targetList is different, we push to it.
+    
+    if (targetList === shifts.value) {
+        shifts.value.push(newShift);
+    } else {
+        targetList.push(newShift);
+        // If target list didn't exist in mockData, we should set it but mockData is const reference to object.
+        if (!mockData[key]) mockData[key] = targetList;
+    }
+    
+    // Show Success Toast
+    showToast('success', 'המשמרת נוספה בהצלחה!');
+    
+    // Close modal after short delay? user said "once done indicate date added". 
+    // Maybe keep modal open? Or close? Let's close after confirmation.
+    setTimeout(() => {
+       isQuickShiftModalOpen.value = false;
+    }, 1500);
+};
+
+// Long Press Logic
+const pressingDay = ref(null);
+let pressTimer = null;
+const isLongPressHandled = ref(false);
+
+const startPress = (day) => {
+    if (!day) return;
+    pressingDay.value = day;
+    isLongPressHandled.value = false;
+    
+    pressTimer = setTimeout(() => {
+        handleQuickDayClick(day);
+        isLongPressHandled.value = true;
+        pressingDay.value = null; // visual feedback end
+    }, 1000); // 1 second
+};
+
+const endPress = (day) => {
+    if (!day) return;
+    if (pressTimer) clearTimeout(pressTimer);
+    pressingDay.value = null;
+    
+    if (!isLongPressHandled.value) {
+        // Short press detected -> Show Hint
+        showToast('info', 'יש ללחוץ לפחות שניה אחת על יום רצוי כדי להוסיף משמרת מהירה');
+    }
+    isLongPressHandled.value = false;
+};
+
+const cancelPress = () => {
+    if (pressTimer) clearTimeout(pressTimer);
+    pressingDay.value = null;
+    isLongPressHandled.value = false;
+};
+
+// Toast Logic
+const toastVisible = ref(false);
+const toastMessage = ref('');
+const toastType = ref('info'); // info, success
+let toastTimeout = null;
+
+const showToast = (type, message) => {
+    toastType.value = type;
+    toastMessage.value = message;
+    toastVisible.value = true;
+    
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toastVisible.value = false;
+    }, 3000);
+};
+
+// FAB Logic
+
+
+const handleFabItemClick = (item) => {
+    if (item.id === 1) { // Quick Shift
+        openQuickShiftModal(true);
+    } else if (item.id === 2) { // New Shift
+        // Create a new empty shift for Today
+        const now = new Date();
+        const d = now.getDate().toString().padStart(2, '0');
+        const m = (now.getMonth() + 1).toString().padStart(2, '0');
+        const y = now.getFullYear();
+        const fullDate = `${d}/${m}/${y}`;
+        
+        const h = now.getHours().toString().padStart(2, '0');
+        const min = now.getMinutes().toString().padStart(2, '0');
+        
+        editingShiftIndex.value = -1; // New Shift Flag
+        
+        // Populate editingShift
+        editingShift.fullDate = fullDate;
+        editingShift.type = 'בוקר';
+        editingShift.entry = '--:--';
+        editingShift.exit = '--:--';
+        editingShift.break = 0;
+        editingShift.extra = 0;
+        editingShift.deduction = 0;
+        editingShift.notes = '';
+        
+        isDetailModalOpen.value = true;
+    }
+    // Other items logic...
+    isFabMenuOpen.value = false;
+};
+
+const openQuickShiftModal = () => {
+    activeShiftType.value = 'בוקר'; // Reset
+    quickShiftDate.value = new Date(); // Reset to today
+    isQuickShiftModalOpen.value = true;
+};
+
+const closeQuickShiftModal = () => {
+    isQuickShiftModalOpen.value = false;
 };
 </script>
 
@@ -639,6 +1848,17 @@ const prevMonth = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Header Title */
+.header-title-area {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: white;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
 }
 
 /* Month Selector */
@@ -774,15 +1994,20 @@ const prevMonth = () => {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-
-/* Transitions */
-.slide-next-enter-active,
-.slide-next-leave-active,
-.slide-prev-enter-active,
-.slide-prev-leave-active,
+/* Faster Transitions for "diminuer le fade" */
 .fade-enter-active,
 .fade-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.05s linear; /* Ultra fast */
+}
+
+.fade-fast-enter-active,
+.fade-fast-leave-active {
+   transition: opacity 0.05s linear; /* Ultra fast */
+}
+
+.fade-fast-enter-from,
+.fade-fast-leave-to {
+  opacity: 0;
 }
 
 .slide-next-enter-from {
@@ -896,9 +2121,11 @@ const prevMonth = () => {
   gap: 12px;
   z-index: 1001;
   align-items: flex-start; /* items grow to right */
+  pointer-events: none; /* Allow clicks through empty area */
 }
 
 .fab-menu-item {
+  pointer-events: auto; /* Enable clicks on items */
   background: white;
   border-radius: 30px;
   padding: 6px 6px 6px 20px; /* Large padding left for text */
@@ -912,7 +2139,8 @@ const prevMonth = () => {
   /* Let's use strict flex order */
   flex-direction: row; 
   width: 240px;
-  justify-content: space-between;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .menu-icon-circle {
@@ -934,12 +2162,11 @@ const prevMonth = () => {
 }
 
 .menu-label {
-  flex: 1;
   text-align: right; /* Hebrew text alignment */
   font-size: 1rem;
   font-weight: 500;
   color: #333;
-  padding: 0 16px;
+  padding: 0;
 }
 
 .menu-handle {
@@ -959,7 +2186,9 @@ const prevMonth = () => {
 /* Menu Transitions */
 .fab-item-enter-active,
 .fab-item-leave-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition-property: opacity, transform;
+  transition-duration: 0.5s;
+  transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .fab-item-enter-from,
@@ -1213,6 +2442,8 @@ const prevMonth = () => {
   font-size: 4rem;
   font-weight: 300;
   color: #0093AB;
+  direction: ltr !important; 
+  unicode-bidi: bidi-override;
 }
 
 .date-display {
@@ -1233,15 +2464,18 @@ const prevMonth = () => {
   padding: 20px;
   background: white;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  width: 100%;
 }
 
 .card-label {
   display: block;
   font-size: 0.9rem;
-  color: #aaa;
-  margin-bottom: 10px;
+  color: #999;
+  margin-bottom: 8px;
   text-align: right;
 }
+
 
 .shift-type-selector {
   width: 100%;
@@ -1257,66 +2491,201 @@ const prevMonth = () => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
+.shift-type-selector:active {
+    background-color: #f9f9f9;
+}
+
+.row-active-red {
+    color: #FF0000 !important;
+}
+
+.row-active-red .col-entry,
+.row-active-red .col-exit,
+.row-active-red .col-hours,
+.row-active-red .col-salary {
+  color: #FF0000 !important;
+}
+
+/* Shift Type Modal Styles */
+.shift-type-title {
+  color: #2196F3 !important; /* Material Blue from image */
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 500;
+  padding-bottom: 10px;
+}
+
+/* Ensure shift type modal and its overlay are strictly on top */
+.input-modal-overlay {
+    z-index: 3000; 
+}
+
+/* Force Shift Selection to be higher than Quick Shift Modal */
+.shift-selection-overlay {
+    z-index: 4000 !important;
+    background-color: rgba(0,0,0,0.5); /* Re-assert background */
+    opacity: 1 !important; /* Ensure it is not transparent */
+    display: flex; /* Ensure flex for centering */
+    align-items: center;
+    justify-content: center;
+}
+
+.shift-type-body {
+    padding: 0 16px;
+}
+
+.shift-type-option {
+  display: flex;
+  justify-content: flex-end; /* Text on Right */
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  direction: ltr; /* Force LTR container so we can place input Left and Text Right manually */
+  gap: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.shift-type-option:last-child {
+  border-bottom: none;
+}
+
+.option-label {
+  font-size: 1.2rem; /* Larger font */
+  color: #000;
+  flex: 1;
+  text-align: right;
+  font-weight: 400;
+}
+
+.option-radio {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: #555; /* Default browser radio style is blue usually, user image shows black stroke circle. We can just use standard for now or custom css if needed. Standard large is fine. */
+  cursor: pointer;
+}
+
 .shift-times-row {
   display: flex;
-  justify-content: space-between;
-  padding: 0 10px;
+  justify-content: center; /* Center them but with gap */
+  gap: 60px; /* Space them out significantly */
+  text-align: center;
+  margin-top: 10px;
 }
 
 .time-col {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .time-label {
-  font-size: 0.9rem;
-  color: #777;
+  font-size: 0.85rem;
+  color: #999;
+  margin-bottom: 4px;
 }
 
 .time-value {
   font-size: 1.5rem;
+  color: #555;
   font-weight: 300;
-  color: #444;
 }
 
+/* Slider */
 .slider-container {
   width: 90%;
   max-width: 400px;
   margin-bottom: 40px;
 }
 
-.slider-btn {
+.slider-track {
   width: 100%;
-  height: 56px;
-  border-radius: 28px;
-  border: 1px solid #0093AB; /* border only as per image */
+  height: 42px; /* Reduced height from 56 */
+  border-radius: 21px; /* Half of height */
+  border: 1px solid #0093AB;
   background: white;
-  display: flex;
-  align-items: center;
-  padding: 4px;
   position: relative;
-  cursor: pointer;
-}
-
-.slider-arrow {
-  width: 48px;
-  height: 48px;
-  background-color: #4DD0E1;
-  border-radius: 50%;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .slider-text {
-  flex: 1;
-  text-align: center;
   color: #0093AB;
-  font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1rem; /* Slightly smaller text */
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 10;
 }
+
+/* Calendar Day Pressing State */
+.calendar-day.pressing {
+    background-color: rgba(0, 147, 171, 0.2);
+    transform: scale(0.95);
+    transition: all 0.2s ease;
+}
+
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: fit-content;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 5000; /* Ensure on top of everything, including modal overlays */
+    max-width: 90%;
+    
+    direction: rtl;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-text {
+    color: #333;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.slider-thumb {
+  width: 34px; /* Reduced size */
+  height: 34px;
+  background: #0093AB; 
+  border-radius: 50%;
+  position: absolute;
+  left: 4px;
+  top: 3px; /* vertically centered: (42-34)/2 = 4 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 20;
+}
+
+
+.slider-thumb svg {
+    stroke: white; /* White arrow */
+}
+
+/* Override previous button styles if necessary */
+.slider-btn { display: none; }
+
 
 /* Detail Modal */
 .detail-modal-overlay {
@@ -1330,7 +2699,7 @@ const prevMonth = () => {
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  backdrop-filter: blur(2px);
+  /* backdrop-filter: blur(2px); REMOVED per user request 'on voit trouble' */
 }
 
 .detail-modal {
@@ -1457,5 +2826,249 @@ const prevMonth = () => {
   width: 1px;
   background-color: rgba(255,255,255,0.3);
   height: 100%;
+}
+
+.input-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(2px);
+}
+
+.input-modal {
+  background: white;
+  width: 85%;
+  max-width: 340px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  padding: 0; 
+  position: relative;
+  background-color: white;
+}
+
+.input-modal-title {
+  color: #29B6F6; /* Light Blue */
+  font-size: 1.6rem;
+  font-weight: 400;
+  padding: 20px 20px 10px 20px;
+  text-align: right;
+}
+
+.input-title-divider {
+  height: 2px;
+  background-color: #29B6F6;
+  width: 100%;
+}
+
+.input-modal-body {
+    padding: 20px;
+}
+
+.input-instruction {
+  color: #333;
+  margin: 0 0 30px 0;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.modal-input {
+  width: 100%;
+  border: none;
+  font-size: 1.1rem;
+  padding: 8px 0;
+  outline: none;
+  text-align: right;
+  color: #333;
+  background: transparent;
+  direction: rtl;
+}
+
+.modal-input::placeholder {
+  color: #ccc;
+  font-weight: 300;
+}
+
+.input-line {
+  height: 2px;
+  background-color: #29B6F6;
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.input-modal-footer {
+  display: flex;
+  border-top: 1px solid #eee;
+}
+
+.modal-btn {
+  flex: 1;
+  background: white;
+  border: none;
+  font-size: 1rem;
+  padding: 15px;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.modal-btn.confirm {
+    border-left: 1px solid #eee; 
+    font-weight: 500;
+}
+
+.modal-btn:active {
+    background-color: #f5f5f5;
+}
+
+/* Time Modal Specifics */
+.time-modal-body {
+    padding: 30px 20px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    direction: ltr; /* Ensure HH:MM order */
+}
+
+.time-picker-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 2; /* Above lines */
+}
+
+.time-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.time-cell {
+    font-family: 'Heebo', sans-serif;
+    color: #999;
+    font-size: 1.2rem;
+    font-weight: 400;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+}
+
+.time-cell.current {
+    color: #333;
+    font-size: 2rem;
+    font-weight: 500;
+    margin: 5px 0;
+}
+
+.time-input {
+    border: none;
+    text-align: center;
+    font-size: 2rem;
+    font-family: inherit;
+    color: inherit;
+    background: transparent;
+    width: 60px;
+    outline: none;
+    font-weight: 500;
+}
+
+/* Chrome, Safari, Edge, Opera */
+.time-input::-webkit-outer-spin-button,
+.time-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.time-input {
+  -moz-appearance: textfield;
+}
+
+.time-colon {
+    font-size: 2rem;
+    font-weight: 500;
+    color: #333;
+    margin-top: -8px; /* Alignment adjustment */
+}
+
+.time-selection-lines {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 60px; /* Approximate height of current row */
+    pointer-events: none;
+    z-index: 1;
+}
+
+.time-selection-lines .line {
+    width: 100%;
+    height: 2px;
+    background-color: #4DD0E1; /* Cyan/Teal line */
+}
+
+.time-selection-lines .line.top {
+    margin-top: 0;
+}
+
+.time-selection-lines .line.bottom {
+    margin-top: 56px; /* spacing */
+}
+
+/* Shift Type Modal Specifics */
+.shift-type-title {
+    font-size: 1.3rem; /* Slightly smaller to fit "Please select..." */
+    text-align: center; /* Image shows centered title */
+    padding: 20px;
+}
+
+.shift-type-body {
+    padding: 0; /* Full width items */
+    display: flex;
+    flex-direction: column;
+}
+
+.shift-type-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: background 0.1s;
+    user-select: none;
+}
+
+.shift-type-option:active {
+    background-color: #f5f5f5;
+}
+
+.option-label {
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.option-radio {
+    width: 20px;
+    height: 20px;
+    accent-color: #0093AB; /* Match theme */
+    cursor: pointer;
+}
+
+.option-divider {
+    height: 1px;
+    background-color: #eee;
+    width: 100%;
 }
 </style>
