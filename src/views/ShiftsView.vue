@@ -902,6 +902,21 @@ const editingShift = reactive({
 const editingShiftIndex = ref(-1);
 
 const handleRowClick = (shift, index) => {
+  // DEBUG: Check what we are clicking
+  const type = shift.type || '';
+  console.log('Clicked Row:', index, 'Type:', type);
+
+  const nonEditableKeywords = ['חג', 'חופש', 'מילואים', 'מחלה', 'תשלום חודשי', 'הבראה'];
+  
+  const isNonEditable = nonEditableKeywords.some(keyword => type.includes(keyword));
+  console.log('Is Non Editable?', isNonEditable);
+
+  if (isNonEditable) {
+      // Show info/toast instead of opening edit modal
+      showToast('info', `מדובר ב${type}`);
+      return;
+  }
+
   editingShiftIndex.value = index;
   
   // Populate
@@ -914,6 +929,7 @@ const handleRowClick = (shift, index) => {
   editingShift.break = shift.break || 0;
   editingShift.extra = shift.extra || 0.0;
   editingShift.deduction = shift.deduction || 0.0;
+  editingShift.notes = shift.notes || ''; 
   
   isDetailModalOpen.value = true;
 };

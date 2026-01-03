@@ -40,6 +40,11 @@
           <span v-if="isLoading" class="loader"></span>
           <span v-else>Vérifier</span>
         </button>
+        
+        <!-- Mock/Demo Login Button -->
+        <button type="button" class="btn-secondary-action" @click="bypassLogin" style="margin-top: 10px;">
+          Connexion Démo (Mock)
+        </button>
       </form>
     </div>
 
@@ -230,6 +235,23 @@ const handleCodeVerification = async () => {
     isLoading.value = false
   }
 }
+
+
+const bypassLogin = () => {
+    // Generate fake token
+    const fakeToken = 'mock-token-' + Date.now();
+    const fakeUser = {
+        Id: 'mock-user-id',
+        Username: 'DemoUser',
+        Telephone: '0500000000',
+        TelephoneVerifie: true
+    };
+    
+    store.dispatch('saveToken', fakeToken);
+    store.commit('SET_USER', fakeUser);
+    
+    router.push({ name: 'shifts' });
+};
 </script>
 
 <style scoped>
@@ -430,5 +452,23 @@ input:focus {
 @keyframes rotation {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.btn-secondary-action {
+  width: 100%;
+  padding: 0.875rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px dashed #ccc;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary-action:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-main);
+  border-color: var(--text-muted);
 }
 </style>
