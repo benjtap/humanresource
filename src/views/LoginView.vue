@@ -88,6 +88,7 @@ const store = useStore()
 const isLoading = ref(false)
 const showOtpModal = ref(false)
 const verificationCode = ref('')
+const authContext = ref('inscription') // 'inscription' or 'connexion'
 
 const form = reactive({
   idNumber: '',
@@ -97,60 +98,136 @@ const form = reactive({
 const handleIdentityCheck = async () => {
   isLoading.value = true
   try {
-    // 1. Chained Request: Send ID and Phone to API endpoint
-    const response = await api.post('/auth/checkTZphone', {
-      idNumber: form.idNumber,
-      phoneNumber: form.phoneNumber
-    })
-    
-    // Dans le cas de code 200 (et autres 2xx), Axios ne lance pas d'erreur, donc on continue ici
-    if (response.status === 200 && response.data) {
-        showOtpModal.value = true
+    // 1. Essayer Inscription
+    const payload = {
+      Username: form.idNumber,
+      Telephone: form.phoneNumber
     }
     
+    // Note: Endpoint paths case sensitive? Typically lowercase in URL. Controller is "Auth".
+    // Using /api/Auth/inscription
+    const response = await api.post('/Auth/inscription', payload)
+    
+    if (response.data.succes) {
+        authContext.value = 'inscription'
+        showOtpModal.value = true
+        return
+    }
+
+    // Si pas succès, vérifier si c'est parce que l'utilisateur existe
+    // Le message peut varier, on regarde si ça contient des mots clés ou si succes est false tout simplement
+    // Si l'utilisateur existe, on tente une connexion
+    
+    console.log("Inscription failed, trying login...", response.data.message)
+    await tryLoginFlow()
+
   } catch (error) {
     console.error('Identity check failed:', error)
+    // Si 400 (Bad Request), peut-être validation échouée ou utilisateur existe (selon implémentation)
+    // On essaie le login flow en fallback si l'erreur n'est pas critique
     
-    // Si il ya un message comme Axios Error message: 'Request failed with status code 401'
-    if (error.response && error.response.status === 401) {
-        alert("Les données envoyées sont invalides")
-    } else {
-        alert('Erreur lors de la vérification. Veuillez vérifier vos informations.')
+    // Si c'est une vraie erreur réseau ou autre, on alerte
+    if (error.response && error.response.status === 400) {
+         // Si c'est "déjà utilisé", on tente le login
+         // Malheureusement le message est dans response.data.message
+         if (error.response.data && !error.response.data.succes) {
+            await tryLoginFlow()
+            return
+         }
     }
+    
+    alert('Erreur: ' + (error.response?.data?.message || 'Vérifiez vos informations.'))
   } finally {
     isLoading.value = false
   }
 }
 
+const tryLoginFlow = async () => {
+    // Tentative de connexion (Demande OTP)
+    try {
+        const response = await api.post('/Auth/connexion/demander', { 
+            Username: form.idNumber 
+        })
+        
+        if (response.data.succes) {
+            authContext.value = 'connexion'
+            showOtpModal.value = true
+        } else {
+            // Echec aussi du login (ex: compte inactif, ou tel non vérifié qui nécessite inscription code resend)
+            if (response.data.message.includes("vérifier votre téléphone")) {
+                // Cas spécial: existe mais pas vérifié. On doit renvoyer le code inscription
+                await resendInscriptionCode()
+            } else {
+                alert(response.data.message || 'Compte introuvable.')
+            }
+        }
+    } catch (e) {
+         console.error("Login attempt failed", e)
+         alert("Erreur lors de la connexion.")
+    }
+}
+
+const resendInscriptionCode = async () => {
+    try {
+        const response = await api.post('/Auth/inscription/renvoyer-code', { 
+            Username: form.idNumber 
+        })
+        if (response.data.succes) {
+            authContext.value = 'inscription' // On retourne en mode inscription pour la vérif
+            showOtpModal.value = true
+            alert("Un nouveau code d'inscription a été envoyé.")
+        } else {
+            alert(response.data.message)
+        }
+    } catch (e) {
+        alert("Impossible de renvoyer le code.")
+    }
+}
+
 const handleCodeVerification = async () => {
-  // Validation : le code doit faire exactement 6 chiffres
   if (!/^\d{6}$/.test(verificationCode.value)) {
     alert('Le code doit contenir exactement 6 chiffres.')
     return
   }
 
+  isLoading.value = true
   try {
-    // 2. Post verification code
-    const response = await api.post('/auth/checkTZcode', {
-      random: verificationCode.value,
-      idNumber: form.idNumber // Send context if needed
-    })
+    const endpoint = authContext.value === 'inscription' 
+        ? '/Auth/inscription/verifier' 
+        : '/Auth/connexion/verifier'
 
-    // 3. If concordance, get JWT token
-    const token = response.data.token
+    const payload = {
+        Username: form.idNumber,
+        Code: verificationCode.value
+    }
     
-    if (token) {
-      // 4. Store token in Vuex (which also sets the Axios header)
-      store.dispatch('saveToken', token)
-      
-      // Redirect to shifts page
-      router.push({ name: 'shifts' })
+    const response = await api.post(endpoint, payload)
+
+    if (response.data.succes) {
+        // Succès ! Le token devrait être dans response.data.data.token (camelCase) ou Token
+        // API .NET retourne souvent PascalCase pour les propriétés anonymes ou DTO standard sauf config
+        // Mon DTO 'ConnexionResponse' a 'Token' et 'Utilisateur'.
+        const data = response.data.data
+        const token = data.token || data.Token
+
+        if (token) {
+            store.dispatch('saveToken', token)
+            store.commit('SET_USER', data.utilisateur || data.Utilisateur) // Save user info too if store supports it
+            router.push({ name: 'shifts' })
+        } else {
+             // Cas rare: succès sans token ? (Ne devrait pas arriver avec ma modif backend)
+             alert('Vérification réussie, veuillez vous connecter.')
+             showOtpModal.value = false
+             // Switch to login flow manually if needed, but easier to just ask user to click "Verifier" again
+        }
     } else {
-        alert('Code invalide')
+        alert(response.data.message || 'Code invalide')
     }
   } catch (error) {
     console.error('Code verification failed:', error)
-    alert('Code incorrect ou expiré.')
+    alert(error.response?.data?.message || 'Code incorrect ou expiré.')
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

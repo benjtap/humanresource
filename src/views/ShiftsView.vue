@@ -62,7 +62,7 @@
         <div v-else-if="shifts.length > 0" class="shifts-list" key="list">
           <div v-for="(shift, index) in shifts" :key="index" class="shift-row" :class="{ 'row-selected': selectedIndices.has(index), 'row-active-red': shift.exit === '--:--' }" @click="handleRowClick(shift, index)">
             <div class="col-date">
-              <div class="date-circle" :class="[shift.type, { selected: selectedIndices.has(index) }]" @click.stop="toggleSelection(index)">
+              <div class="date-circle" :class="[getShiftTypeClass(shift.type), { selected: selectedIndices.has(index) }]" @click.stop="toggleSelection(index)">
                 <template v-if="selectedIndices.has(index)">
                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </template>
@@ -72,9 +72,11 @@
                 </template>
               </div>
             </div>
-            <div class="col-entry">{{ shift.entry }}</div>
+            <div class="col-entry">
+               <span v-if="!shift.isVacation">{{ shift.entry }}</span>
+            </div>
             <div class="col-exit">
-              <span v-if="shift.isVacation" class="vacation-text">חופש</span>
+              <span v-if="shift.isVacation" class="vacation-text">{{ shift.type }}</span>
               <span v-else>{{ shift.exit }}</span>
             </div>
             <div class="col-hours">{{ shift.hours }}</div>
@@ -418,6 +420,164 @@
            <div class="input-modal-footer">
             <!-- Optional buttons if needed, but per image it looks like a selection list. Let's keep standard interaction -->
            </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Payment Type (סוג תשלום) Modal -->
+    <transition name="fade">
+      <div v-if="isPaymentTypeModalOpen" class="input-modal-overlay shift-selection-overlay" @click.self="isPaymentTypeModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title shift-type-title" style="color: #4facfe;">
+             נא לבחור סוג תשלום
+          </div>
+          <div class="input-title-divider" style="background-color: #4facfe;"></div>
+          
+          <div class="shift-type-body">
+             <label class="shift-type-option" @click.prevent="selectPaymentType('חופש')">
+               <span class="option-label">חופש</span>
+               <input type="radio" :checked="tempPaymentType === 'חופש'" class="option-radio" readonly>
+             </label>
+             
+             <label class="shift-type-option" @click.prevent="selectPaymentType('חג')">
+               <span class="option-label">חג</span>
+               <input type="radio" :checked="tempPaymentType === 'חג'" class="option-radio" readonly>
+             </label>
+
+             <label class="shift-type-option" @click.prevent="selectPaymentType('מחלה')">
+               <span class="option-label">מחלה</span>
+               <input type="radio" :checked="tempPaymentType === 'מחלה'" class="option-radio" readonly>
+             </label>
+
+             <label class="shift-type-option" @click.prevent="selectPaymentType('תשלום חודשי')">
+               <span class="option-label">תשלום חודשי</span>
+               <input type="radio" :checked="tempPaymentType === 'תשלום חודשי'" class="option-radio" readonly>
+             </label>
+
+             <label class="shift-type-option" @click.prevent="selectPaymentType('הבראה')">
+               <span class="option-label">הבראה</span>
+               <input type="radio" :checked="tempPaymentType === 'הבראה'" class="option-radio" readonly>
+             </label>
+
+             <label class="shift-type-option" @click.prevent="selectPaymentType('מילואים')">
+               <span class="option-label">מילואים</span>
+               <input type="radio" :checked="tempPaymentType === 'מילואים'" class="option-radio" readonly>
+             </label>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Sick Day Modal (Specific) -->
+    <transition name="fade">
+      <div v-if="isSickDayModalOpen" class="input-modal-overlay shift-selection-overlay" @click.self="isSickDayModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title shift-type-title" style="color: #4facfe;">
+             נא לבחור יום מחלה
+          </div>
+          <div class="input-title-divider" style="background-color: #4facfe;"></div>
+          
+          <div class="shift-type-body">
+             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה א')">
+               <span class="option-label">יום מחלה א</span>
+               <input type="radio" :checked="tempSickDayType === 'יום מחלה א'" class="option-radio" readonly>
+             </label>
+             
+             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה ב')">
+               <span class="option-label">יום מחלה ב</span>
+               <input type="radio" :checked="tempSickDayType === 'יום מחלה ב'" class="option-radio" readonly>
+             </label>
+
+             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה ג')">
+               <span class="option-label">יום מחלה ג</span>
+               <input type="radio" :checked="tempSickDayType === 'יום מחלה ג'" class="option-radio" readonly>
+             </label>
+
+             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה ד ומעלה')">
+               <span class="option-label">יום מחלה ד ומעלה</span>
+               <input type="radio" :checked="tempSickDayType === 'יום מחלה ד ומעלה'" class="option-radio" readonly>
+             </label>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+
+
+    <!-- Monthly Payment Modal -->
+    <transition name="fade">
+      <div v-if="isMonthlyPaymentModalOpen" class="input-modal-overlay shift-selection-overlay" @click.self="isMonthlyPaymentModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title shift-type-title" style="color: #4facfe;">
+             תשלום חודשי
+          </div>
+          <div class="input-title-divider" style="background-color: #4facfe;"></div>
+          
+          <div class="input-modal-body" style="padding: 20px;">
+             <label style="display:block; text-align:right; margin-bottom:12px; color:#666; font-size:1rem;">נא להכניס סכום</label>
+             <div class="input-with-underscore">
+                <input type="number" v-model="monthlyPaymentAmount" placeholder="הקלד סכום" class="transparent-input" />
+             </div>
+          </div>
+
+          <div class="detail-footer">
+               <button class="footer-btn" @click="isMonthlyPaymentModalOpen = false">ביטול</button>
+               <div class="footer-divider"></div>
+               <button class="footer-btn" @click="confirmMonthlyPayment">אישור</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Recuperation Modal -->
+    <transition name="fade">
+      <div v-if="isRecuperationModalOpen" class="input-modal-overlay shift-selection-overlay" @click.self="isRecuperationModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title shift-type-title" style="color: #4facfe;">
+             הבראה
+          </div>
+          <div class="input-title-divider" style="background-color: #4facfe;"></div>
+          
+          <div class="input-modal-body" style="padding: 20px;">
+             <label style="display:block; text-align:right; margin-bottom:12px; color:#666; font-size:1rem;">נא להכניס כמות ימי הבראה</label>
+             <div class="input-with-underscore">
+                <input type="number" v-model="recuperationDays" placeholder="הקלד ימים" class="transparent-input" />
+             </div>
+          </div>
+
+          <div class="detail-footer">
+               <button class="footer-btn" @click="isRecuperationModalOpen = false">ביטול</button>
+               <div class="footer-divider"></div>
+               <button class="footer-btn" @click="confirmRecuperation">אישור</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Date Range Modal (New) -->
+    <transition name="fade">
+      <div v-if="isDateRangeModalOpen" class="input-modal-overlay" @click.self="isDateRangeModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title">
+             בחירת תאריכים עבור {{ tempPaymentType }}
+          </div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+             <div class="detail-form-row">
+                <label>התחלה:</label>
+                <input type="text" readonly :value="rangeStartDateStr" class="input-box" style="direction: ltr; cursor: pointer;" @click="pickRangeStart" />
+             </div>
+             <div class="detail-form-row">
+                <label>סיום:</label>
+                <input type="text" readonly :value="rangeEndDateStr" class="input-box" style="direction: ltr; cursor: pointer;" @click="pickRangeEnd" />
+             </div>
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmDateRange">אישור</button>
+            <button class="modal-btn cancel" @click="isDateRangeModalOpen = false">ביטול</button>
+          </div>
         </div>
       </div>
     </transition>
@@ -798,7 +958,7 @@ const calculateShiftData = (shiftData) => {
 };
 
 const checkOverlap = (candidate, ignoreIdx, shiftsList = shifts.value, referenceDate = currentDate.value) => {
-    const getRange = (s) => {
+    const getShiftTimes = (s) => {
         let dStr = s.fullDate;
         if (!dStr) {
              const d = s.dayNumber.toString().padStart(2, '0');
@@ -808,28 +968,89 @@ const checkOverlap = (candidate, ignoreIdx, shiftsList = shifts.value, reference
         }
         const [day, mon, yr] = dStr.split('/').map(Number);
         
-        if (!s.entry || !s.exit || s.entry === '--:--' || s.exit === '--:--') return null;
+        // If it's a "Vacation", "Holiday" or other Fixed Payment type (isVacation=true), it consumes the WHOLE DAY ideally.
+        // Or if we check against a candidate that is Vacation, it conflicts with ANYTHING on that day.
         
-        const [h1, m1] = s.entry.split(':').map(Number);
-        const [h2, m2] = s.exit.split(':').map(Number);
+        let start = null;
+        let end = null;
+        let isAllDay = s.isVacation || false;
+
+        // Construct base date timestamp
+        const baseDate = new Date(yr, mon - 1, day);
+        const baseTime = baseDate.getTime();
+
+        if (isAllDay) {
+             // Treat as 00:00 to 23:59:59 (effectively)
+             start = baseTime;
+             end = baseTime + (24 * 3600 * 1000) - 1; 
+        } else {
+            if (s.entry && s.entry !== '--:--') {
+                 const [h1, m1] = s.entry.split(':').map(Number);
+                 start = new Date(yr, mon - 1, day, h1, m1).getTime();
+            }
+
+            if (s.exit && s.exit !== '--:--') {
+                 const [h2, m2] = s.exit.split(':').map(Number);
+                 let endDate = new Date(yr, mon - 1, day, h2, m2);
+                 if (start && endDate.getTime() <= start) {
+                     endDate.setDate(endDate.getDate() + 1);
+                 }
+                 end = endDate.getTime();
+            }
+        }
         
-        const start = new Date(yr, mon - 1, day, h1, m1);
-        let end = new Date(yr, mon - 1, day, h2, m2);
-        
-        if (end <= start) end.setDate(end.getDate() + 1);
-        
-        return { start: start.getTime(), end: end.getTime() };
+        return { start, end, isAllDay, fullDate: dStr }; // Return fullDate for simple day matching
     };
 
-    const candRange = getRange(candidate);
-    if (!candRange) return false;
+    const candTimes = getShiftTimes(candidate);
+    
+    // If candidate is All Day (Vacation/Holiday), it conflicts if ANY shift exists on that day?
+    // Or strictly time overlap? 
+    // Usually Vacation/Holiday replaces the work day. So yes, if there is a shift, it's a conflict.
+    
+    if (!candTimes.start && !candTimes.isAllDay) return null; 
 
-    return shiftsList.some((s, i) => {
+    // Find conflicting shift
+    const conflict = shiftsList.find((s, i) => {
         if (i === ignoreIdx) return false;
-        const r = getRange(s);
-        if (!r) return false;
-        return (candRange.start < r.end && candRange.end > r.start);
+        
+        const sTimes = getShiftTimes(s);
+        
+        // If checking cross-list, simple date check isn't enough if lists are different months, 
+        // but getShiftTimes parses fullDate so timestamps are correct absolute time.
+        
+        if (!sTimes.start) return false; // Existing shift Invalid 
+
+        // If either is All Day and they are on same day -> Overlap
+        if (candTimes.isAllDay || sTimes.isAllDay) {
+             // Check if they geographically overlap in time?
+             // Since we set AllDay to 00:00-23:59, standard time overlap works.
+             // But let's be robust: Date String Match might be safer for "Same Day" logic
+             if (candTimes.fullDate === sTimes.fullDate) return true;
+             
+             // What if it's an overnight shift from previous day?
+             // Overlap logic: StartA < EndB && EndA > StartB
+             // If AllDay is 00:00-24:00, it will catch overnight shifts overlapping into this day.
+        }
+
+        if (candTimes.end && sTimes.end) {
+            return (candTimes.start < sTimes.end && candTimes.end > sTimes.start);
+        } else if (candTimes.end) {
+             // Candidate closed, Existing Open (Entry only)
+             // Existing Entry inside Candidate?
+             return (sTimes.start >= candTimes.start && sTimes.start < candTimes.end);
+        } else if (sTimes.end) {
+             // Candidate Open, Existing Closed
+             return (candTimes.start >= sTimes.start && candTimes.start < sTimes.end);
+        } else {
+             // Both entries only? 
+             // If different times, maybe ok? But dangerous. Let's assume conflict if same day same time?
+             // Unlikely case.
+             return false;
+        }
     });
+
+    return conflict || null;
 };
 
 const updateShift = () => {
@@ -1138,7 +1359,7 @@ const tempDay = ref(1);
 const tempMonth = ref(0); // 0-11
 const tempYear = ref(2025);
 
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
 
 const mapMonthName = (idx) => monthNames[(idx + 12) % 12];
 
@@ -1196,17 +1417,54 @@ const validateDateInputs = () => {
     if (tempDay.value > 31) tempDay.value = 31;
 };
 
+let datePickerResolve = null;
+
+const pickDate = (initialDateStr) => {
+    return new Promise((resolve) => {
+        datePickerResolve = resolve;
+        
+        let dVal, mVal, yVal;
+        const parts = (initialDateStr || '').split('/');
+        if (parts.length === 3) {
+            dVal = parseInt(parts[0]);
+            mVal = parseInt(parts[1]) - 1;
+            yVal = parseInt(parts[2]);
+        } else {
+            const now = new Date();
+            dVal = now.getDate();
+            mVal = now.getMonth();
+            yVal = now.getFullYear();
+        }
+        
+        tempDay.value = dVal;
+        tempMonth.value = mVal;
+        tempYear.value = yVal;
+        isDateModalOpen.value = true;
+    });
+};
+
 const confirmDateModal = () => {
     // Save back as DD/MM/YYYY
     const d = tempDay.value.toString().padStart(2, '0');
     const m = (tempMonth.value + 1).toString().padStart(2, '0');
     const y = tempYear.value;
-    editingShift.fullDate = `${d}/${m}/${y}`;
+    const dateStr = `${d}/${m}/${y}`;
+    
+    if (datePickerResolve) {
+        datePickerResolve(dateStr);
+        datePickerResolve = null;
+    } else {
+        editingShift.fullDate = dateStr;
+    }
     isDateModalOpen.value = false;
 };
 
 const cancelDateModal = () => {
     isDateModalOpen.value = false;
+    if (datePickerResolve) {
+        datePickerResolve(null);
+        datePickerResolve = null;
+    }
 };
 
 // Entry View Data
@@ -1280,7 +1538,20 @@ const startTimer = (startTime) => {
         const salary = (secondsTotal / 3600) * hourlyRate;
         activeShiftSalary.value = salary.toFixed(2);
         
+    activeShiftSalary.value = salary.toFixed(2);
+        
     }, 1000);
+};
+
+const getShiftTypeClass = (type) => {
+    if (!type) return '';
+    if (type.includes('מחלה')) return 'bg-sick';
+    if (type.includes('חופש')) return 'bg-vacation';
+    if (type.includes('חג')) return 'bg-holiday';
+    if (type.includes('תשלום חודשי')) return 'bg-monthly';
+    if (type.includes('הבראה')) return 'bg-recuperation';
+    if (type.includes('מילואים')) return 'bg-vacation'; // Same as vacation
+    return '';
 };
 
 const handleEntry = () => {
@@ -1288,7 +1559,7 @@ const handleEntry = () => {
     const h = now.getHours().toString().padStart(2, '0');
     const m = now.getMinutes().toString().padStart(2, '0');
     const entryTime = `${h}:${m}`;
-    const dayName = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).format(now).replace('יום ', '');
+    const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][now.getDay()];
     const dayNumber = now.getDate().toString();
     
     // Constraint: We only allow adding if the viewed month matches current month. 
@@ -1310,6 +1581,13 @@ const handleEntry = () => {
         deduction: 0
     });
     
+    // VALIDATE OVERLAP -- Pass newShift, ignore index (-1), shifts.value (current list), and now
+    if (checkOverlap(newShift, -1, shifts.value, now)) {
+        showToast('error', 'שגיאה: חפיפה בשעות המשמרת עם משמרת קיימת');
+        dragX.value = 0; // Reset slider
+        return;
+    }
+
     shifts.value.push(newShift);
     
     // Set Active
@@ -1393,6 +1671,17 @@ const handleSliderAction = () => {
         const m = now.getMinutes().toString().padStart(2, '0');
         const exitTime = `${h}:${m}`;
         
+        // VALIDATE OVERLAP FOR EXIT
+        // We create a temporary copy with the proposed exit time to test
+        const candidate = { ...activeShift.value, exit: exitTime };
+        const idx = shifts.value.indexOf(activeShift.value);
+        
+        if (checkOverlap(candidate, idx, shifts.value, now)) {
+             showToast('error', 'שגיאה: חפיפה בשעות המשמרת עם משמרת קיימת');
+             dragX.value = 0; // Reset slider
+             return;
+        }
+
         activeShift.value.exit = exitTime;
         const { hoursStr, salaryStr } = calculateShiftData(activeShift.value);
         activeShift.value.hours = hoursStr;
@@ -1422,14 +1711,14 @@ const handleSliderAction = () => {
              
              // Wait for fetch to complete before adding the new shift to avoid overwrite
              fetchShifts(now).then(() => {
-                 handleEntry();
+                 handleEntry(); // Now contains validation
                  setTimeout(() => { dragX.value = 0; }, 2000); 
              });
              return;
         }
 
         // Already on same month
-        handleEntry(); 
+        handleEntry(); // Now contains validation
         setTimeout(() => { dragX.value = 0; }, 2000); 
     }
 };
@@ -1451,8 +1740,368 @@ const isViewingActiveShiftMonth = computed(() => {
 });
 
 // Entry Tab specific shift type selector state
-// Entry Tab specific shift type selector state
 // activeShiftType defined earlier
+
+// Payment Type Modal Logic
+const isPaymentTypeModalOpen = ref(false);
+const tempPaymentType = ref('');
+
+// Sick Modal State
+const isSickDayModalOpen = ref(false);
+const tempSickDayType = ref('יום מחלה א');
+
+// Monthly Payment State
+const isMonthlyPaymentModalOpen = ref(false);
+const monthlyPaymentAmount = ref('');
+
+// Recuperation State
+const isRecuperationModalOpen = ref(false);
+const recuperationDays = ref('');
+
+// Date Range Modal Logic
+const isDateRangeModalOpen = ref(false);
+const rangeStartDateStr = ref('');
+const rangeEndDateStr = ref('');
+
+const selectPaymentType = (type) => {
+    tempPaymentType.value = type;
+    isPaymentTypeModalOpen.value = false;
+    
+    if (type === 'מחלה') {
+        isSickDayModalOpen.value = true;
+        tempSickDayType.value = 'יום מחלה א';
+        return;
+    }
+    
+    if (type === 'תשלום חודשי') {
+        isMonthlyPaymentModalOpen.value = true;
+        monthlyPaymentAmount.value = '';
+        return;
+    }
+
+    if (type === 'הבראה') {
+        isRecuperationModalOpen.value = true;
+        recuperationDays.value = '';
+        return;
+    }
+    
+    // Default range to current view or today
+    const now = new Date();
+    // format DD/MM/YYYY for input type text (custom picker)
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const d = now.getDate().toString().padStart(2, '0');
+    
+    rangeStartDateStr.value = `${d}/${m}/${y}`;
+    rangeEndDateStr.value = `${d}/${m}/${y}`;
+    
+    isDateRangeModalOpen.value = true;
+};
+
+// Sick Day Logic
+const selectSickDay = async (subType) => {
+    tempSickDayType.value = subType;
+    isSickDayModalOpen.value = false;
+    
+    // Open Date Picker (Single Date)
+    const now = new Date();
+    const d = now.getDate().toString().padStart(2, '0');
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const y = now.getFullYear();
+    const defaultDate = `${d}/${m}/${y}`;
+    
+    const chosenDateStr = await pickDate(defaultDate);
+    
+    if (chosenDateStr) {
+        confirmSickDay(chosenDateStr);
+    }
+};
+
+const confirmSickDay = (dateStr) => {
+    // Parse dateStr DD/MM/YYYY
+    const [d, mStr, yVal] = dateStr.split('/');
+    const dStr = d.toString().padStart(2, '0');
+    const mStrOp = mStr.toString().padStart(2, '0'); // mStr might be '1' or '01'
+    const year = parseInt(yVal);
+    
+    // Date Object for check
+    const dateObj = new Date(year, parseInt(mStrOp) - 1, parseInt(dStr));
+    const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][dateObj.getDay()];
+    const fullDate = `${dStr}/${mStrOp}/${year}`;
+
+    const newShift = {
+        dayNumber: dStr,
+        dayName: dayName,
+        fullDate: fullDate,
+        type: tempSickDayType.value,
+        entry: '--:--',
+        exit: '--:--',
+        hours: '8:00',
+        salary: '360.00',
+        break: 0,
+        extra: 0,
+        deduction: 0,
+        isVacation: true,
+        notes: tempSickDayType.value
+    };
+
+    // Determine target view key
+    // We check against the MONTH of the NEW SHIFT, not necessarily current view?
+    // Actually current logic uses mockData[key]. Key is from newShift.
+    const key = `${year}-${mStrOp}`;
+    
+    // Current View Key
+    const viewY = currentDate.value.getFullYear();
+    const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+    const viewKey = `${viewY}-${viewM}`;
+
+    let targetList = (key === viewKey) ? shifts.value : (mockData[key] || []);
+
+    const conflict = checkOverlap(newShift, -1, targetList, dateObj);
+    if (conflict) {
+            const conflictDesc = conflict.isVacation ? conflict.type : `${conflict.entry}-${conflict.exit}`;
+            alert(`שגיאה: חפיפה בתאריך ${fullDate} עם משמרת קיימת (${conflictDesc}).\nלא ניתן להוסיף ${tempSickDayType.value}.`);
+            return; 
+    }
+
+    if (key === viewKey) {
+            shifts.value.push(newShift);
+    } else {
+            if (targetList.length === 0 && !mockData[key]) {
+                mockData[key] = [];
+                targetList = mockData[key];
+            }
+            targetList.push(newShift);
+    }
+    
+    showToast('success', `נוסף: ${tempSickDayType.value}`);
+};
+
+
+const confirmMonthlyPayment = () => {
+    if (!monthlyPaymentAmount.value) {
+        alert('יש להזין סכום');
+        return;
+    }
+    
+    const now = new Date();
+    // Use first day of month? Or Today? User didn't specify. Today is safest.
+    // Actually Monthly Payment usually implies "For this month".
+    // I'll put it on the 1st of the VIEWED month if possible? 
+    // Logic: If I am viewing Feb, I want to add for Feb.
+    // But currently I am using `currentDate.value` for view.
+    // Let's use `currentDate.value` (Viewed Month).
+    // Ensure it's valid date (e.g. 1st).
+    
+    const dObj = new Date(currentDate.value);
+    dObj.setDate(1); // 1st of view month
+    
+    const d = dObj.getDate().toString().padStart(2, '0');
+    const m = (dObj.getMonth() + 1).toString().padStart(2, '0');
+    const y = dObj.getFullYear();
+    const fullDate = `${d}/${m}/${y}`;
+    const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][dObj.getDay()];
+
+    const newShift = {
+        dayNumber: d,
+        dayName: dayName,
+        fullDate: fullDate,
+        type: 'תשלום חודשי',
+        entry: '--:--',
+        exit: '--:--',
+        hours: '0:00',
+        salary: parseFloat(monthlyPaymentAmount.value).toFixed(2),
+        break: 0,
+        extra: 0,
+        deduction: 0,
+        isVacation: true,
+        notes: 'תשלום חודשי'
+    };
+
+    // Assuming we are viewing the target month
+    // If overlap?
+    // "Monthly Payment" on 1st might overlap with existing shift on 1st.
+    // If conflict, maybe allow? or Block?
+    // If it's pure payment, maybe allow.
+    // But checkOverlap will block.
+    // Let's try to add overlap check but maybe warn only?
+    // Or just let it block and user has to delete shift on 1st?
+    // "Bonus" usually shouldn't block.
+    // I'll disable overlap check for 'תשלום חודשי'?
+    // Wait, ref to `checkOverlap`: it checks timestamps.
+    // 'תשלום חודשי': entry --:--.
+    // `checkOverlap` returns null if !candTimes.start && !candTimes.isAllDay.
+    // `isVacation`=true implies `isAllDay`=true in `checkOverlap`?
+    // Yes.
+    // So it WILL block.
+    // I should make `isVacation`=false for 'תשלום חודשי'?
+    // But then UI hides entry/exit col?
+    // Let's keep isVacation=true.
+    // I won't check overlap for this specific type to allow co-existence.
+    
+    // Add directly
+     const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+     const viewY = currentDate.value.getFullYear();
+     const viewKey = `${viewY}-${viewM}`;
+     const key = `${y}-${m}`;
+     
+     if (key === viewKey) {
+            shifts.value.push(newShift);
+    } else {
+            if (!mockData[key]) mockData[key] = [];
+            mockData[key].push(newShift);
+    }
+    
+    isMonthlyPaymentModalOpen.value = false;
+    showToast('success', `נוסף תשלום חודשי: ${newShift.salary}`);
+};
+
+const confirmRecuperation = () => {
+    if (!recuperationDays.value) {
+        alert('יש להזין כמות ימים');
+        return;
+    }
+    
+    const days = parseFloat(recuperationDays.value);
+    if (isNaN(days) || days <= 0) return;
+    
+    // Formula: Days * 8 * 45
+    const totalSalary = days * 8 * 45;
+    
+    // Create Entry (Today/1st of Month)
+    const dObj = new Date(currentDate.value);
+    dObj.setDate(1); 
+    
+    const d = dObj.getDate().toString().padStart(2, '0');
+    const m = (dObj.getMonth() + 1).toString().padStart(2, '0');
+    const y = dObj.getFullYear();
+    const fullDate = `${d}/${m}/${y}`;
+    const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][dObj.getDay()];
+
+    const newShift = {
+        dayNumber: d,
+        dayName: dayName,
+        fullDate: fullDate,
+        type: 'הבראה',
+        entry: '--:--',
+        exit: '--:--',
+        hours: '0:00',
+        salary: totalSalary.toFixed(2),
+        break: 0,
+        extra: 0,
+        deduction: 0,
+        isVacation: true,
+        notes: `הבראה (${days} ימים)`
+    };
+
+     const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+     const viewY = currentDate.value.getFullYear();
+     const viewKey = `${viewY}-${viewM}`;
+     const key = `${y}-${m}`;
+     
+     if (key === viewKey) {
+            shifts.value.push(newShift);
+    } else {
+            if (!mockData[key]) mockData[key] = [];
+            mockData[key].push(newShift);
+    }
+    
+    isRecuperationModalOpen.value = false;
+    showToast('success', `ניצול הבראה: ${days} ימים`);
+};
+
+const pickRangeStart = async () => {
+    const d = await pickDate(rangeStartDateStr.value);
+    if (d) rangeStartDateStr.value = d;
+};
+
+const pickRangeEnd = async () => {
+    const d = await pickDate(rangeEndDateStr.value);
+    if (d) rangeEndDateStr.value = d;
+};
+
+const confirmDateRange = () => {
+    if (!rangeStartDateStr.value || !rangeEndDateStr.value) return;
+    
+    const [d1, m1, y1] = rangeStartDateStr.value.split('/').map(Number);
+    const start = new Date(y1, m1 - 1, d1);
+    
+    const [d2, m2, y2] = rangeEndDateStr.value.split('/').map(Number);
+    const end = new Date(y2, m2 - 1, d2);
+    
+    if (end < start) {
+        alert("תאריך סיום חייב להיות גדול או שווה לתאריך התחלה");
+        return;
+    }
+    
+    // Iterate
+    const current = new Date(start);
+    let count = 0;
+    
+    while (current <= end) {
+        const d = current.getDate().toString().padStart(2, '0');
+        const m = (current.getMonth() + 1).toString().padStart(2, '0');
+        const y = current.getFullYear();
+
+        const fullDate = `${d}/${m}/${y}`;
+        const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][current.getDay()];
+        
+        const newShift = {
+            dayNumber: d,
+            dayName: dayName,
+            fullDate: fullDate,
+            type: tempPaymentType.value,
+            entry: '--:--',
+            exit: '--:--',
+            hours: '8:00',
+            salary: '360.00',
+            break: 0,
+            extra: 0,
+            deduction: 0,
+            isVacation: true,
+            notes: tempPaymentType.value
+        };
+        
+        // Add to correct data list (handle cross-month)
+        const key = `${y}-${m}`;
+        
+        // Determine current view key
+        const viewY = currentDate.value.getFullYear();
+        const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+        const viewKey = `${viewY}-${viewM}`;
+
+        // Get target list for overlap check
+        // If we are in the same month, use shifts.value (reactive) to ensure we check against latest added in this loop
+        let targetList = (key === viewKey) ? shifts.value : (mockData[key] || []);
+
+        // Check for overlaps with this specific day
+        const conflict = checkOverlap(newShift, -1, targetList, current);
+        if (conflict) {
+             const conflictDesc = conflict.isVacation ? conflict.type : `${conflict.entry}-${conflict.exit}`;
+             alert(`שגיאה: חפיפה בתאריך ${fullDate} עם משמרת קיימת (${conflictDesc}).\nלא ניתן להוסיף ${tempPaymentType.value}.`);
+             return; 
+        }
+        
+        // Add to list
+        if (key === viewKey) {
+             shifts.value.push(newShift);
+             // Since shifts.value proxies the array in mockData, mockData is updated implicitly.
+        } else {
+             if (targetList.length === 0 && !mockData[key]) {
+                  mockData[key] = [];
+                  targetList = mockData[key];
+             }
+             targetList.push(newShift);
+        }
+        
+        // Next day
+        current.setDate(current.getDate() + 1);
+        count++;
+    }
+    
+    showToast('success', `נוספו ${count} רשומות של ${tempPaymentType.value}`);
+    isDateRangeModalOpen.value = false;
+};
 
 const menuItems = [
   {
@@ -1664,12 +2313,12 @@ const handleQuickDayClick = (day) => {
     const m = (d.getMonth() + 1).toString().padStart(2, '0');
     const y = d.getFullYear();
     const dayStr = day.toString();
-    const parts = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).formatToParts(d);
-    const dayName = parts.find(p => p.type === 'weekday')?.value || '';
+
+    const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][d.getDay()];
     
     const newShift = {
         dayNumber: dayStr,
-        dayName: dayName.replace('יום ', ''),
+        dayName: dayName,
         entry: '08:00', // Mock defaults
         exit: '16:00',
         hours: '8:00',
@@ -1794,6 +2443,8 @@ const handleFabItemClick = (item) => {
         editingShift.notes = '';
         
         isDetailModalOpen.value = true;
+    } else if (item.id === 3) { // Fixed Payment
+        isPaymentTypeModalOpen.value = true;
     }
     // Other items logic...
     isFabMenuOpen.value = false;
@@ -1950,6 +2601,25 @@ const closeQuickShiftModal = () => {
   transform: scale(1.05); /* Slight pop */
 }
 
+.date-circle.bg-sick {
+    background-color: #D32F2F; /* Red */
+}
+.date-circle.bg-vacation {
+    background-color: #388E3C; /* Green */
+}
+.date-circle.bg-holiday {
+    background-color: #7B1FA2; /* Purple */
+}
+.date-circle.bg-monthly {
+    background-color: #FBC02D; /* Gold */
+}
+.date-circle.bg-recuperation {
+    background-color: #00ACC1; /* Cyan */
+}
+.date-circle.bg-reserves {
+    background-color: #558B2F; /* Olive */
+}
+
 .row-selected {
   background-color: rgba(0, 147, 171, 0.05); /* Very light highlight for the row */
 }
@@ -2079,7 +2749,8 @@ const closeQuickShiftModal = () => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: #E91E63; /* Pink */
+  background-color: rgba(233, 30, 99, 0.8); /* Semi-transparent Pink */
+  backdrop-filter: blur(4px); /* Glass effect */
   color: white;
   border: none;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -3070,5 +3741,23 @@ const closeQuickShiftModal = () => {
     height: 1px;
     background-color: #eee;
     width: 100%;
+}
+
+.input-with-underscore {
+    border-bottom: 2px solid #4facfe;
+    padding: 4px 0;
+    width: 100%;
+}
+.transparent-input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 1.2rem;
+    text-align: right;
+    color: #333;
+    background: transparent;
+}
+.transparent-input::placeholder {
+    color: #ccc;
 }
 </style>

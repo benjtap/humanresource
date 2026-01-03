@@ -22,4 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-"nouveau 2.txt" 
+"nouveau 2.txt"
+
+# Backend Repository (Managed separately)
+humanAPI/
