@@ -789,7 +789,7 @@
           </span>
           <span>משמרות</span>
         </router-link>
-        <a href="#" class="menu-item">
+        <a href="#" class="menu-item" @click.prevent="goToSummary">
           <span class="item-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
           </span>
@@ -850,9 +850,26 @@
 
 <script setup>
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 const isMenuOpen = ref(false);
 const isFabMenuOpen = ref(false);
+
+const goToSummary = () => {
+    isMenuOpen.value = false;
+    // Pass current date viewer to summary
+    // currentDate is a Date object. Convert to YYYY-MM-DD or just pass it as string.
+    // We want the summary to know which month we are looking at.
+    const y = currentDate.value.getFullYear();
+    const m = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+    const d = currentDate.value.getDate().toString().padStart(2, '0');
+    
+    // We can pass ISO string date=2026-01-03
+    const dateParam = `${y}-${m}-${d}`;
+    router.push({ name: 'summary', query: { date: dateParam }}); // Use name 'summary' defined in router
+};
+
 const currentTab = ref('shifts'); // 'shifts' or 'entry'
 
 // Selection Logic
@@ -914,6 +931,12 @@ const handleRowClick = (shift, index) => {
   if (isNonEditable) {
       // Show info/toast instead of opening edit modal
       showToast('info', `מדובר ב${type}`);
+      return;
+  }
+
+  // Check if Active Shift (Entry but no Exit)
+  if (shift.entry && shift.entry !== '--:--' && (!shift.exit || shift.exit === '--:--')) {
+      showToast('info', 'משמרת פעילה - לא ניתן לערוך');
       return;
   }
 
@@ -2169,21 +2192,10 @@ const nextMonthLabel = computed(() => {
 });
 
 // Mock Data
-const mockData = {
-  '2025-12': [
-    { dayNumber: '23', dayName: 'שלישי', entry: '11:29', exit: '16:29', hours: '8:00', salary: '360.00', isVacation: false, type: 'regular' },
-    { dayNumber: '24', dayName: 'רביעי', entry: '11:29', exit: '16:29', hours: '5:00', salary: '225.00', isVacation: false, type: 'regular' },
-    { dayNumber: '28', dayName: 'ראשון', entry: '12:00', exit: '22:00', hours: '9:15', salary: '430.31', isVacation: false, type: 'regular' },
-    { dayNumber: '29', dayName: 'שני',   entry: '07:00', exit: '16:15', hours: '9:15', salary: '430.31', isVacation: false, type: 'regular' },
-  ],
-  // Add more months if needed
-  '2026-01': [
-    { dayNumber: '02', dayName: 'שישי', entry: '08:00', exit: '14:00', hours: '6:00', salary: '300.00', isVacation: false, type: 'שישי' },
-    { dayNumber: '04', dayName: 'ראשון', entry: '07:00', exit: '16:00', hours: '9:00', salary: '450.00', isVacation: false, type: 'בוקר' },
-    { dayNumber: '05', dayName: 'שני',   entry: '22:00', exit: '06:00', hours: '8:00', salary: '400.00', isVacation: false, type: 'לילה' },
-    { dayNumber: '08', dayName: 'חמישי', entry: '08:00', exit: '17:00', hours: '9:00', salary: '450.00', isVacation: false, type: 'בוקר' },
-  ],
-};
+import { mockData } from '../services/mockData';
+
+// const mockData = { ... } (Removed local)
+
 
 const shifts = ref([]);
 const isLoading = ref(false);
