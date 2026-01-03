@@ -160,9 +160,6 @@
           <span>פירוט שכר</span>
         </button>
     </nav>
-
-    </nav>
-
   </div>
 </template>
 
