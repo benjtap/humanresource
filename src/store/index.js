@@ -1,6 +1,10 @@
 import { createStore } from 'vuex'
 import api from '../services/api'
 import createPersistedState from 'vuex-persistedstate'
+import { mockShiftTypes } from '../services/mockShiftTypes'
+import { mockPaymentTypes } from '../services/mockPaymentTypes'
+import { mockSickTypes } from '../services/mockSickTypes'
+import { mockWeeklyPlans } from '../services/mockWeeklyPlans'
 
 export default createStore({
     state: {
@@ -12,13 +16,24 @@ export default createStore({
         shifts: [],
         pendingSync: [],
         lastSync: null,
-        isSyncing: false
+        isSyncing: false,
+
+        // Metadata (Persistent)
+        shiftTypes: mockShiftTypes,
+        paymentTypes: mockPaymentTypes,
+        sickTypes: mockSickTypes,
+        weeklyPlans: mockWeeklyPlans
     },
     getters: {
         isAuthenticated: state => !!state.token,
         currentUser: state => state.user,
         allShifts: state => state.shifts,
-        syncStatus: state => state.isSyncing
+        syncStatus: state => state.isSyncing,
+
+        allShiftTypes: state => state.shiftTypes,
+        allPaymentTypes: state => state.paymentTypes,
+        allSickTypes: state => state.sickTypes,
+        allWeeklyPlans: state => state.weeklyPlans
     },
     mutations: {
         // Auth Mutations
@@ -56,7 +71,25 @@ export default createStore({
         },
         CLEAR_PENDING(state) { state.pendingSync = [] },
         SET_LAST_SYNC(state, timestamp) { state.lastSync = timestamp },
-        SET_SYNCING(state, syncing) { state.isSyncing = syncing }
+        SET_SYNCING(state, syncing) { state.isSyncing = syncing },
+
+        // Metadata Mutations
+        ADD_SHIFT_TYPE(state, type) { state.shiftTypes.push(type) },
+        UPDATE_SHIFT_TYPE(state, type) {
+            const idx = state.shiftTypes.findIndex(t => t.id === type.id)
+            if (idx !== -1) state.shiftTypes.splice(idx, 1, type)
+        },
+        DELETE_SHIFT_TYPE(state, id) {
+            state.shiftTypes = state.shiftTypes.filter(t => t.id !== id)
+        },
+
+        // Weekly Plans Mutations
+        ADD_WEEKLY_PLAN(state, plan) { state.weeklyPlans.push(plan) },
+        DELETE_WEEKLY_PLAN(state, id) { state.weeklyPlans = state.weeklyPlans.filter(p => p.id !== id) },
+        UPDATE_WEEKLY_PLAN(state, plan) {
+            const idx = state.weeklyPlans.findIndex(p => p.id === plan.id)
+            if (idx !== -1) state.weeklyPlans.splice(idx, 1, plan)
+        }
     },
     actions: {
         // Auth Actions
@@ -113,12 +146,22 @@ export default createStore({
             }
             // Logic improvement: strictly we should only clear what succeeded, but user's code cleared all at end.
             commit('CLEAR_PENDING')
-        }
+        },
+
+        // Metadata Actions
+        addShiftType({ commit }, type) { commit('ADD_SHIFT_TYPE', type) },
+        updateShiftType({ commit }, type) { commit('UPDATE_SHIFT_TYPE', type) },
+        deleteShiftType({ commit }, id) { commit('DELETE_SHIFT_TYPE', id) },
+
+        // Weekly Plans Actions
+        addWeeklyPlan({ commit }, plan) { commit('ADD_WEEKLY_PLAN', plan) },
+        deleteWeeklyPlan({ commit }, id) { commit('DELETE_WEEKLY_PLAN', id) },
+        updateWeeklyPlan({ commit }, plan) { commit('UPDATE_WEEKLY_PLAN', plan) }
     },
     plugins: [
         createPersistedState({
             key: 'human-resource-data',
-            paths: ['shifts', 'pendingSync', 'lastSync'] // Only persist data, auth is handled manually/localStorage
+            paths: ['shifts', 'pendingSync', 'lastSync', 'shiftTypes', 'paymentTypes', 'sickTypes', 'weeklyPlans'] // Only persist data, auth is handled manually/localStorage
         })
     ]
 })

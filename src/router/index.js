@@ -3,7 +3,7 @@ import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 
 const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+    history: createWebHistory(import.meta.env.BASE_URL), // History mode
     routes: [
         {
             path: '/',
@@ -21,6 +21,24 @@ const router = createRouter({
             path: '/summary',
             name: 'summary',
             component: () => import('../views/SummaryView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/weekly-plan',
+            name: 'weekly-plan',
+            component: () => import('../views/WeeklyPlanView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/weekly-schedules',
+            name: 'weekly-schedules',
+            component: () => import('../views/WeeklySchedulesListView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/shift-types',
+            name: 'shift-types',
+            component: () => import('../views/ShiftTypesView.vue'),
             meta: { requiresAuth: true }
         }
     ]

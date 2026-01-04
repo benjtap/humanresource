@@ -394,19 +394,9 @@
           <div class="input-title-divider"></div>
           
           <div class="shift-type-body">
-             <label class="shift-type-option" @click.prevent="selectShiftType('בוקר')">
-               <span class="option-label">בוקר</span>
-               <input type="radio" :checked="tempShiftType === 'בוקר'" class="option-radio" readonly>
-             </label>
-             
-             <label class="shift-type-option" @click.prevent="selectShiftType('שישי')">
-               <span class="option-label">שישי</span>
-               <input type="radio" :checked="tempShiftType === 'שישי'" class="option-radio" readonly>
-             </label>
-
-             <label class="shift-type-option" @click.prevent="selectShiftType('לילה')">
-               <span class="option-label">לילה</span>
-               <input type="radio" :checked="tempShiftType === 'לילה'" class="option-radio" readonly>
+             <label v-for="type in mockShiftTypes" :key="type.id" class="shift-type-option" @click.prevent="selectShiftType(type.name)">
+               <span class="option-label">{{ type.name }}</span>
+               <input type="radio" :checked="tempShiftType === type.name" class="option-radio" readonly>
              </label>
           </div>
           
@@ -434,34 +424,9 @@
           <div class="input-title-divider" style="background-color: #4facfe;"></div>
           
           <div class="shift-type-body">
-             <label class="shift-type-option" @click.prevent="selectPaymentType('חופש')">
-               <span class="option-label">חופש</span>
-               <input type="radio" :checked="tempPaymentType === 'חופש'" class="option-radio" readonly>
-             </label>
-             
-             <label class="shift-type-option" @click.prevent="selectPaymentType('חג')">
-               <span class="option-label">חג</span>
-               <input type="radio" :checked="tempPaymentType === 'חג'" class="option-radio" readonly>
-             </label>
-
-             <label class="shift-type-option" @click.prevent="selectPaymentType('מחלה')">
-               <span class="option-label">מחלה</span>
-               <input type="radio" :checked="tempPaymentType === 'מחלה'" class="option-radio" readonly>
-             </label>
-
-             <label class="shift-type-option" @click.prevent="selectPaymentType('תשלום חודשי')">
-               <span class="option-label">תשלום חודשי</span>
-               <input type="radio" :checked="tempPaymentType === 'תשלום חודשי'" class="option-radio" readonly>
-             </label>
-
-             <label class="shift-type-option" @click.prevent="selectPaymentType('הבראה')">
-               <span class="option-label">הבראה</span>
-               <input type="radio" :checked="tempPaymentType === 'הבראה'" class="option-radio" readonly>
-             </label>
-
-             <label class="shift-type-option" @click.prevent="selectPaymentType('מילואים')">
-               <span class="option-label">מילואים</span>
-               <input type="radio" :checked="tempPaymentType === 'מילואים'" class="option-radio" readonly>
+             <label v-for="type in mockPaymentTypes" :key="type.id" class="shift-type-option" @click.prevent="selectPaymentType(type.name)">
+               <span class="option-label">{{ type.name }}</span>
+               <input type="radio" :checked="tempPaymentType === type.name" class="option-radio" readonly>
              </label>
           </div>
         </div>
@@ -478,24 +443,9 @@
           <div class="input-title-divider" style="background-color: #4facfe;"></div>
           
           <div class="shift-type-body">
-             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה א')">
-               <span class="option-label">יום מחלה א</span>
-               <input type="radio" :checked="tempSickDayType === 'יום מחלה א'" class="option-radio" readonly>
-             </label>
-             
-             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה ב')">
-               <span class="option-label">יום מחלה ב</span>
-               <input type="radio" :checked="tempSickDayType === 'יום מחלה ב'" class="option-radio" readonly>
-             </label>
-
-             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה ג')">
-               <span class="option-label">יום מחלה ג</span>
-               <input type="radio" :checked="tempSickDayType === 'יום מחלה ג'" class="option-radio" readonly>
-             </label>
-
-             <label class="shift-type-option" @click.prevent="selectSickDay('יום מחלה ד ומעלה')">
-               <span class="option-label">יום מחלה ד ומעלה</span>
-               <input type="radio" :checked="tempSickDayType === 'יום מחלה ד ומעלה'" class="option-radio" readonly>
+             <label v-for="type in mockSickTypes" :key="type.id" class="shift-type-option" @click.prevent="selectSickDay(type.name)">
+               <span class="option-label">{{ type.name }}</span>
+               <input type="radio" :checked="tempSickDayType === type.name" class="option-radio" readonly>
              </label>
           </div>
         </div>
@@ -668,6 +618,27 @@
         </button>
     </nav>
 
+    <!-- Weekly Plan Selector Modal -->
+    <transition name="fade">
+      <div v-if="isPlanSelectorModalOpen" class="input-modal-overlay" @click.self="isPlanSelectorModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title">
+             נא לבחור סידור עבודה
+          </div>
+          <div class="input-title-divider"></div>
+          
+          <div class="shift-type-body">
+              <div v-for="plan in availableWeeklyPlans" :key="plan.id" class="radio-item" @click="selectWeeklyPlan(plan.id)">
+                <div class="radio-circle" :class="{ selected: activeWeeklyPlanId === plan.id }">
+                  <div v-if="activeWeeklyPlanId === plan.id" class="radio-inner"></div>
+                </div>
+                <span class="radio-label">{{ plan.label }}</span>
+              </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- FAB Menu -->
     <div v-if="isFabMenuOpen" class="fab-overlay" @click="isFabMenuOpen = false"></div>
     <transition-group name="fab-item" tag="div" class="fab-menu">
@@ -692,19 +663,19 @@
        <svg v-else xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
     </button>
     
-    <!-- Quick Shift Modal -->
+    <!-- Weekly Plan Shift Modal (formerly Quick Shift) -->
     <transition name="fade">
       <div v-if="isQuickShiftModalOpen" class="input-modal-overlay" @click.self="closeQuickShiftModal">
         <div class="input-modal quick-shift-modal" style="padding: 0; overflow: hidden;">
           <div class="input-modal-header" style="background-color: #4DD0E1; color: white; padding: 15px; text-align: center;">
-             <span style="font-size: 1.1rem; font-weight: 500;">משמרת מהירה</span>
+             <span style="font-size: 1.1rem; font-weight: 500;">משמרת סידור עבודה</span>
           </div>
           <div class="input-modal-body" style="padding: 20px;">
-             <div style="text-align: center; color: #777; margin-bottom: 10px;">נא לבחור משמרת מהירה:</div>
+             <div style="text-align: center; color: #777; margin-bottom: 10px;">נא לבחור סידור עבודה:</div>
              
-             <!-- Shift Type Selector (Teal Block) -->
-             <button class="shift-type-selector-quick" @click.stop="openShiftTypeModal(true)" style="width: 100%; background-color: #0093AB; color: white; padding: 12px; border: none; border-radius: 4px; margin-bottom: 20px; font-size: 1.1rem; cursor: pointer;">
-                {{ activeShiftType }}
+             <!-- Weekly Plan Selector -->
+             <button class="shift-type-selector-quick" @click.stop="isPlanSelectorModalOpen = true" style="width: 100%; background-color: #0093AB; color: white; padding: 12px; border: none; border-radius: 4px; margin-bottom: 20px; font-size: 1.1rem; cursor: pointer;">
+                {{ selectedPlanLabel || 'נא לבחור סידור עבודה' }}
              </button>
              
              <!-- Calendar -->
@@ -724,14 +695,14 @@
                  <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; direction: rtl;">
                      <div v-for="(day, idx) in quickShiftGrid" :key="idx" 
                           class="calendar-day" 
-                          :class="{ 'empty': !day, 'pressing': pressingDay === day }"
-                          @mousedown="startPress(day)"
-                          @touchstart="startPress(day)"
-                          @mouseup="endPress(day)"
-                          @touchend="endPress(day)"
+                          :class="{ 'empty': !day, 'pressing': pressingDay === day, 'disabled': day && !isDaySelectable(day) }"
+                          @mousedown="day && isDaySelectable(day) ? startPress(day) : null"
+                          @touchstart="day && isDaySelectable(day) ? startPress(day) : null"
+                          @mouseup="day && isDaySelectable(day) ? endPress(day) : null"
+                          @touchend="day && isDaySelectable(day) ? endPress(day) : null"
                           @mouseleave="cancelPress"
                           @touchcancel="cancelPress"
-                          style="height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-weight: 500; user-select: none;"
+                          :style="{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (day && isDaySelectable(day)) ? 'pointer' : 'not-allowed', borderRadius: '4px', fontWeight: '500', userSelect: 'none', opacity: (day && !isDaySelectable(day)) ? '0.3' : '1' }"
                      >
                         {{ day }}
                      </div>
@@ -795,12 +766,18 @@
           </span>
           <span>פירוט שכר</span>
         </a>
-        <a href="#" class="menu-item">
+        <a href="#" class="menu-item" @click.prevent="goToWeeklyPlan">
           <span class="item-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
           </span>
           <span>סידור עבודה</span>
         </a>
+        <router-link to="/shift-types" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </span>
+          <span>הגדרת סוג משמרת</span>
+        </router-link>
         <a href="#" class="menu-item">
           <span class="item-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -814,35 +791,18 @@
           </span>
           <span>הגדרות</span>
         </a>
-        <a href="#" class="menu-item">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-          </span>
-          <span>משוב</span>
-        </a>
-        <a href="#" class="menu-item">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-          </span>
-          <span>עזרה</span>
-        </a>
         <div class="spacer-small"></div>
-        <a href="#" class="menu-item">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-          </span>
-          <span>גיבוי למחשב</span>
-        </a>
-         <a href="#" class="menu-item">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9"></path><polyline points="12 12 17 17 12 22"></polyline><line x1="17" y1="17" x2="6.8" y2="17"></line></svg>
-          </span>
-          <span>סנכרון לענן</span>
+        
+        <a href="#" class="menu-item" @click.prevent="logout">
+           <span class="item-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+           </span>
+           <span>יציאה</span>
         </a>
       </div>
 
       <div class="sidebar-footer">
-        <span class="version-text">v 2.6</span>
+        <!-- Version Removed -->
       </div>
     </aside>
   </div>
@@ -851,10 +811,21 @@
 <script setup>
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useStore } from 'vuex'; // or import store directly if using options api, but composition api usually uses useStore
+// Wait, this project uses options store in src/store/index.js.
+// Best way in setup script is:
+import store from '../store'; 
+
 const router = useRouter();
 
 const isMenuOpen = ref(false);
 const isFabMenuOpen = ref(false);
+
+const logout = () => {
+    store.dispatch('saveToken', null); // Clear token
+    store.commit('SET_USER', null); // Clear user
+    router.push({ name: 'login' });
+};
 
 const goToSummary = () => {
     isMenuOpen.value = false;
@@ -868,6 +839,11 @@ const goToSummary = () => {
     // We can pass ISO string date=2026-01-03
     const dateParam = `${y}-${m}-${d}`;
     router.push({ name: 'summary', query: { date: dateParam }}); // Use name 'summary' defined in router
+};
+
+const goToWeeklyPlan = () => {
+    isMenuOpen.value = false;
+    router.push({ name: 'weekly-schedules' });
 };
 
 const currentTab = ref('shifts'); // 'shifts' or 'entry'
@@ -1344,6 +1320,46 @@ const isShiftTypeModalOpen = ref(false);
 const tempShiftType = ref('');
 const isEntryMode = ref(false);
 const activeShiftType = ref('בוקר');
+
+// Weekly Plan for Quick-Add
+const isPlanSelectorModalOpen = ref(false);
+const weeklyPlansRef = mockWeeklyPlans; // Expose to template
+const activeWeeklyPlanId = ref(''); // Start with no selection
+const selectedPlanLabel = ref(''); // Track selected plan label
+
+// Filter plans to show only future ones (weekEnd >= today)
+const availableWeeklyPlans = computed(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return mockWeeklyPlans.filter(plan => {
+        const endDate = new Date(plan.weekEnd);
+        return endDate >= today;
+    });
+});
+
+const activeWeeklyPlan = computed(() => {
+    return mockWeeklyPlans.find(p => p.id === activeWeeklyPlanId.value) || null;
+});
+
+const selectWeeklyPlan = (planId) => {
+    activeWeeklyPlanId.value = planId;
+    const plan = mockWeeklyPlans.find(p => p.id === planId);
+    selectedPlanLabel.value = plan ? plan.label : '';
+    isPlanSelectorModalOpen.value = false;
+};
+
+// Check if a day in the calendar is selectable (today or future)
+const isDaySelectable = (day) => {
+    if (!day) return false;
+    const selectedDate = new Date(quickShiftDate.value);
+    selectedDate.setDate(day);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return selectedDate >= today;
+};
 
 const openShiftTypeModal = (forEntry = false) => {
   isEntryMode.value = forEntry;
@@ -2145,7 +2161,7 @@ const confirmDateRange = () => {
 const menuItems = [
   {
     id: 1,
-    label: 'משמרת מהירה',
+    label: 'משמרת סידור עבודה',
     iconClass: 'red',
     isSvg: true,
     // History / Restore icon
@@ -2193,6 +2209,10 @@ const nextMonthLabel = computed(() => {
 
 // Mock Data
 import { mockData } from '../services/mockData';
+import { mockShiftTypes } from '../services/mockShiftTypes';
+import { mockPaymentTypes } from '../services/mockPaymentTypes';
+import { mockSickTypes } from '../services/mockSickTypes';
+import { mockWeeklyPlans } from '../services/mockWeeklyPlans';
 
 // const mockData = { ... } (Removed local)
 
@@ -2342,21 +2362,35 @@ const handleQuickDayClick = (day) => {
     const y = d.getFullYear();
     const dayStr = day.toString();
 
-    const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][d.getDay()];
+    const dayNameInPlan = ['יום א', 'יום ב', 'יום ג', 'יום ד', 'יום ה', 'יום ו', 'שבת'][d.getDay()];
+    const dayNameFull = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][d.getDay()];
     
+    // Find shift from active weekly plan
+    const planShift = activeWeeklyPlan.value?.days?.find(day => day.dayName === dayNameInPlan);
+    
+    if (!planShift || !planShift.isActive) {
+        showToast('info', `אין משמרת מוגדרת בסידור העבודה עבור ${dayNameFull}`);
+        return;
+    }
+
     const newShift = {
         dayNumber: dayStr,
-        dayName: dayName,
-        entry: '08:00', // Mock defaults
-        exit: '16:00',
-        hours: '8:00',
+        dayName: dayNameFull,
+        entry: planShift.entry,
+        exit: planShift.exit,
+        hours: (planShift.entry !== '--:--' && planShift.exit !== '--:--') ? '' : '0:00', // calculateShiftData will fill this
         salary: '0.00',
-        type: activeShiftType.value, // "בוקר" from modal selector
+        type: planShift.shiftName,
         fullDate: `${day.toString().padStart(2,'0')}/${m}/${y}`,
         break: 0,
         extra: 0,
         deduction: 0
     };
+
+    // Calculate hours/salary
+    const { hoursStr, salaryStr } = calculateShiftData(newShift);
+    newShift.hours = hoursStr;
+    newShift.salary = salaryStr;
 
     // Check Overlap
     const key = `${y}-${m}`;
@@ -2947,7 +2981,7 @@ const closeQuickShiftModal = () => {
   width: 100vw;
   height: 100vh;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 100;
+  z-index: 2000;
 }
 
 /* Sidebar */
@@ -2959,7 +2993,7 @@ const closeQuickShiftModal = () => {
   max-width: 320px;
   height: 100%;
   background-color: #F5F5F5;
-  z-index: 101;
+  z-index: 2001;
   transform: translateX(-100%);
   transition: transform 0.3s ease-in-out;
   display: flex;
