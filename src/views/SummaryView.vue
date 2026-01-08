@@ -1,214 +1,426 @@
 <template>
-  <div class="summary-page">
-    <!-- Header (Simple with Back button only if needed, but per request keeping Shift style color but NO hamburger) -->
-    <!-- User asked to remove hamburger. Usually there is a back button. 
-         If standard hierarchy, Back button is on Right (RTL) or Left? 
-         In ShiftsView (RTL), Hamburger is Right (start), Back/Arrow is Left (end)?
-         Let's keep the Back button (Chevron) if logical, or just Title. 
-         "Garder le meme design" -> Shifts design had header. 
-         I will keep the Header bar, center the title, remove the hamburger. 
-    -->
+  <div 
+    class="summary-page"
+    @touchstart="onTouchStart"
+    @touchend="onTouchEnd"
+    @mousedown="onMouseDown"
+    @mouseup="onMouseUp"
+  >
+    <!-- Header -->
+    <!-- Header with Date Nav (Teal) -->
     <header class="header">
-      <!-- Spacer to balance the back button if we want title centered, or just empty -->
-      <div class="header-spacer"></div>
-      
-      <div class="header-title-area">
-          <span>סיכום חודשי</span>
+      <button class="icon-btn" @click.stop="isMenuOpen = true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+      <div class="header-date-nav">
+          <button class="nav-arrow" @click="prevMonth">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <span class="header-date-text">{{ currentMonthLabel }}</span>
+          <button class="nav-arrow" @click="nextMonth">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
       </div>
 
-      <button class="icon-btn" @click="goBack">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      <button class="icon-btn" style="visibility: hidden">
+         <div style="width: 24px;"></div>
       </button>
     </header>
 
-    <!-- Sub Header: Month Display -->
-    <div class="month-header">
-       {{ formattedMonth }}
-    </div>
-
-    <!-- Content -->
-    <div class="summary-content">
-       
-       <!-- Section 1: Days / Hours -->
-       <div class="section-title">ימים / שעות:</div>
-       <div class="stat-row">
-          <span class="stat-label">סה"כ ימים:</span>
-          <span class="stat-value">{{ totalDays }} ימים</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">סה"כ שעות:</span>
-          <span class="stat-value">{{ totalHoursFormatted }} שעות</span> <!-- Simplified format -->
-       </div>
-
-       <div class="divider"></div>
-
-       <!-- Section 2: Leaves Breakdown -->
-       <div class="stat-row">
-          <span class="stat-label">ימי חופש:</span>
-          <span class="stat-value">{{ vacationDays }} ימים</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">ימי מחלה:</span>
-          <span class="stat-value">{{ sickDays }} ימים</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">ימי חג:</span>
-          <span class="stat-value">{{ holidayDays }} ימים</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">ימי הבראה:</span>
-          <span class="stat-value">{{ recuperationDays }} ימים</span>
-       </div>
-
-       <div class="divider"></div>
-
-       <!-- Section 3: Additions / Deductions -->
-       <div class="section-title">הוספות / הורדות:</div>
-       <div class="stat-row">
-          <span class="stat-label">הוספות:</span>
-          <span class="stat-value">{{ totalExtra }} ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">הוספות יומיות:</span>
-          <span class="stat-value">0.00 ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">הורדות:</span>
-          <span class="stat-value red-text">{{ totalDeduction }} ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">הורדות יומיות:</span>
-          <span class="stat-value red-text">0.00 ש"ח</span>
-       </div>
-
-       <div class="divider"></div>
-
-       <!-- Gross Salary -->
-       <div class="section-title" style="margin-top: 20px;">שכר ברוטו:</div>
-       <div class="stat-row gross-row">
-           <span class="stat-value gross-value">סה"כ: {{ totalSalary }} ש"ח</span>
-       </div>
-       
-       <div class="divider"></div>
-
-       <!-- Section 4: Mandatory Deductions (Niouyi Hova) -->
-       <div class="section-title">ניכויי חובה:</div>
-       <div class="stat-row">
-          <span class="stat-label">ביטוח לאומי:</span>
-          <span class="stat-value red-text">{{ nationalInsurance }} ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">מס בריאות:</span>
-          <span class="stat-value red-text">{{ healthTax }} ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">מס הכנסה:</span>
-          <span class="stat-value red-text">{{ incomeTax }} ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label" style="color: #999;">* שווי מס:</span>
-          <span class="stat-value" style="color: #999;">0.00 ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">קרן פנסיה:</span>
-          <span class="stat-value red-text">{{ pensionFund }} ש"ח</span>
-       </div>
-       <div class="stat-row">
-          <span class="stat-label">קרן השתלמות:</span>
-          <span class="stat-value red-text">0.00 ש"ח</span>
-       </div>
-
-    </div>
-
-    <!-- Net Salary Footer (Blue Area) -->
-    <div class="net-salary-footer">
-        <!-- Decoration Icons Left -->
-        <div class="net-icons">
-             <div class="icon-calc">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14"></line><line x1="16" y1="18" x2="16" y2="18"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="12" y1="18" x2="12" y2="18"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="8" y1="18" x2="8" y2="18"></line></svg>
-             </div>
-             <div class="icon-file" style="margin-top:15px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <div style="color:white; font-size:0.7rem; text-align:center;">תלוש שכר</div>
-             </div>
-        </div>
-
-        <!-- Text Right -->
-        <div class="net-text-area">
-            <div class="net-title">שכר נטו:</div>
-            
-            <div class="net-sub-row">
-               <span class="net-label-small">הורדות נטו:</span>
-               <span class="net-value-small">0.00 ש"ח</span>
-            </div>
-            
-            <div class="net-main-row">
-               <span class="net-label-main">משכורת:</span>
-               <span class="net-value-main">{{ netSalary }} ש"ח</span>
-            </div>
+    <!-- Page Title Bar (White) -->
+    <div class="page-title-bar">
+        <span>סיכום חודשי</span>
+        <div class="title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
         </div>
     </div>
 
-    <!-- Bottom Navigation (Matching ShiftsView style) -->
+    <!-- Month Selector -->
+
+
+    <!-- Main Content Area (Scrollable) -->
+    <main class="content-area">
+        <div class="summary-content">
+        
+        <!-- Section 1: Days / Hours -->
+        <div class="section-title">ימים / שעות:</div>
+        <div class="stat-row">
+            <span class="stat-label">סה"כ ימים:</span>
+            <span class="stat-value">{{ totalDays }} ימים</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">סה"כ שעות:</span>
+            <span class="stat-value">{{ totalHoursFormatted }} שעות</span>
+        </div>
+
+        <div class="divider"></div>
+        
+        <!-- Section: Hours Breakdown (New) -->
+        <div class="section-title">שעות:</div>
+        <div class="stat-row" v-for="(val, label) in hoursBreakdown" :key="label">
+             <!-- Label is like '% 100' -->
+             <span class="stat-label">{{ label }}</span>
+             <!-- Value is like '230:00' -->
+             <span class="stat-value"><- {{ val }}</span> 
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 2: Leaves Breakdown -->
+        <div class="stat-row">
+            <span class="stat-label">ימי חופש:</span>
+            <span class="stat-value">{{ vacationDays }} ימים</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">ימי מחלה:</span>
+            <span class="stat-value">{{ sickDays }} ימים</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">ימי חג:</span>
+            <span class="stat-value">{{ holidayDays }} ימים</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">ימי הבראה:</span>
+            <span class="stat-value">{{ recuperationDays }} ימים</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 3: Additions / Deductions -->
+        <div class="section-title">הוספות / הורדות:</div>
+        <div class="stat-row">
+            <span class="stat-label">הוספות:</span>
+            <span class="stat-value">{{ totalExtra }} ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">הוספות יומיות:</span>
+            <span class="stat-value">0.00 ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">הורדות:</span>
+            <span class="stat-value red-text">{{ totalDeduction }} ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">הורדות יומיות:</span>
+            <span class="stat-value red-text">0.00 ש"ח</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Gross Salary -->
+        <div class="section-title" style="margin-top: 20px;">שכר ברוטו:</div>
+        <div class="stat-row gross-row">
+            <span class="stat-value gross-value">סה"כ: {{ totalSalary }} ש"ח</span>
+        </div>
+        
+        <div class="divider"></div>
+
+        <!-- Section 4: Mandatory Deductions (Niouyi Hova) -->
+        <div class="section-title">ניכויי חובה:</div>
+        <div class="stat-row">
+            <span class="stat-label">ביטוח לאומי:</span>
+            <span class="stat-value red-text">{{ nationalInsurance }} ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">מס בריאות:</span>
+            <span class="stat-value red-text">{{ healthTax }} ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">מס הכנסה:</span>
+            <span class="stat-value red-text">{{ incomeTax }} ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label" style="color: #999;">* שווי מס:</span>
+            <span class="stat-value" style="color: #999;">0.00 ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">קרן פנסיה:</span>
+            <span class="stat-value red-text">{{ pensionFund }} ש"ח</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">קרן השתלמות:</span>
+            <span class="stat-value red-text">0.00 ש"ח</span>
+        </div>
+
+        </div>
+
+        <!-- Net Salary Footer (Blue Area) - Inside Scrollable Area -->
+        <div class="net-salary-footer">
+            <!-- Decoration Icons Left -->
+            <div class="net-icons">
+                <div class="icon-calc">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14"></line><line x1="16" y1="18" x2="16" y2="18"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="12" y1="18" x2="12" y2="18"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="8" y1="18" x2="8" y2="18"></line></svg>
+                </div>
+                <div class="icon-file" style="margin-top:15px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <div style="color:white; font-size:0.7rem; text-align:center;">תלוש שכר</div>
+                </div>
+            </div>
+
+            <!-- Text Right -->
+            <div class="net-text-area">
+                <div class="net-title">שכר נטו:</div>
+                
+                <div class="net-sub-row">
+                <span class="net-label-small">הורדות נטו:</span>
+                <span class="net-value-small">0.00 ש"ח</span>
+                </div>
+                
+                <div class="net-main-row">
+                <span class="net-label-main">משכורת:</span>
+                <span class="net-value-main">{{ netSalary }} ש"ח</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-       <button class="nav-item" @click="goBack">
+       <button class="nav-item" @click="goToShifts">
          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-         <span>משמרות</span>
+         <span>שעות</span>
        </button>
         <button class="nav-item active">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
           <span>פירוט שכר</span>
         </button>
     </nav>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" v-if="isMenuOpen" @click="isMenuOpen = false"></div>
+
+    <!-- Sidebar Menu -->
+    <aside class="sidebar" :class="{ open: isMenuOpen }">
+      <!-- Sidebar Header -->
+      <div class="sidebar-header">
+        <div class="header-bg-decor"></div>
+        <div class="sidebar-top-row">
+          <span class="account-name">חשבון: עבודה 1</span>
+        </div>
+        <div class="sidebar-bottom-row">
+          <div class="menu-label-group">
+            <button class="icon-btn" @click="isMenuOpen = false">
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <span class="menu-text">תפריט</span>
+          </div>
+          <div class="user-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#ccc" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menu Items -->
+      <div class="menu-items">
+        <router-link to="/shifts" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          </span>
+          <span>משמרות</span>
+        </router-link>
+        <a href="#" class="menu-item active-menu-item" @click.prevent="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </span>
+          <span>פירוט שכר</span>
+        </a>
+        <router-link to="/weekly-schedules" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          </span>
+          <span>סידור עבודה</span>
+        </router-link>
+        <router-link to="/shift-types" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </span>
+          <span>הגדרת סוג משמרת</span>
+        </router-link>
+        <router-link to="/settings" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          </span>
+          <span>הגדרות</span>
+        </router-link>
+        <div class="spacer-small"></div>
+        <a href="#" class="menu-item">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </span>
+          <span>דוח אקסל</span>
+        </a>
+        <div class="spacer-small"></div>
+        
+        <a href="#" class="menu-item" @click.prevent="logout">
+           <span class="item-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+           </span>
+           <span>יציאה</span>
+        </a>
+      </div>
+
+      <div class="sidebar-footer"></div>
+    </aside>
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-
-// Mock Data
+import store from '../store';
 import { mockData } from '../services/mockData';
 
 const router = useRouter();
 const route = useRoute();
 
-const currentMonth = ref('');
-const shifts = ref([]);
+const isMenuOpen = ref(false);
+const currentDate = ref(new Date());
 
+// Initialize
 onMounted(() => {
-    // Get month from query, e.g. ?date=2026-01-03
+    // Get month from query or use current
     const dateStr = route.query.date;
-    let d = new Date();
     if (dateStr) {
-        d = new Date(dateStr);
+        currentDate.value = new Date(dateStr);
     }
-    
-    // Set formatted month header
-    const m = (d.getMonth() + 1).toString().padStart(2, '0');
-    const y = d.getFullYear();
-    currentMonth.value = `${m}/${y}`;
-    
-    // Load Data
-    const key = `${y}-${m}`;
-    shifts.value = mockData[key] || [];
+    // No need to call fetchData, computed 'shifts' handles it
 });
 
-const formattedMonth = computed(() => currentMonth.value);
+const shifts = computed(() => {
+    const all = store.getters.allShifts;
+    const y = currentDate.value.getFullYear();
+    const m = currentDate.value.getMonth(); // 0-based
+    
+    return all.filter(s => {
+        // Parse shift date. safe parse from s.date (ISO) or s.fullDate (DD/MM/YYYY)
+        let d = new Date(s.date);
+        if (isNaN(d.getTime()) && s.fullDate) {
+             const [dd, mm, yy] = s.fullDate.split('/');
+             d = new Date(yy, mm - 1, dd);
+        }
+        return d.getFullYear() === y && d.getMonth() === m;
+    });
+});
 
-// Computers
+// Formatting
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date);
+};
+
+const currentMonthLabel = computed(() => formatDate(currentDate.value));
+
+const prevMonthLabel = computed(() => {
+  const d = new Date(currentDate.value);
+  d.setMonth(d.getMonth() - 1);
+  return formatDate(d);
+});
+
+const nextMonthLabel = computed(() => {
+  const d = new Date(currentDate.value);
+  d.setMonth(d.getMonth() + 1);
+  return formatDate(d);
+});
+
+// Actions
+const prevMonth = () => {
+    const d = new Date(currentDate.value);
+    d.setMonth(d.getMonth() - 1);
+    currentDate.value = d;
+};
+
+const nextMonth = () => {
+    const d = new Date(currentDate.value);
+    d.setMonth(d.getMonth() + 1);
+    currentDate.value = d;
+};
+
+// Swipe Handlers
+const touchStartX = ref(0);
+const touchEndX = ref(0);
+
+const onTouchStart = (e) => {
+  touchStartX.value = e.changedTouches[0].screenX;
+};
+
+const onTouchEnd = (e) => {
+  touchEndX.value = e.changedTouches[0].screenX;
+  handleSwipe();
+};
+
+const onMouseDown = (e) => {
+  touchStartX.value = e.screenX;
+};
+
+const onMouseUp = (e) => {
+  touchEndX.value = e.screenX;
+  handleSwipe();
+};
+
+const handleSwipe = () => {
+    const threshold = 50; 
+    if (touchEndX.value < touchStartX.value - threshold) {
+        nextMonth(); // Swipe Left -> Next Month
+    }
+    if (touchEndX.value > touchStartX.value + threshold) {
+        prevMonth(); // Swipe Right -> Prev Month
+    }
+};
+
+const goToShifts = () => {
+    // Navigate to Hours View
+    const y = currentDate.value.getFullYear();
+    const m = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+    const d = currentDate.value.getDate().toString().padStart(2, '0');
+    const dateParam = `${y}-${m}-${d}`; 
+    router.push({ name: 'hours', query: { date: dateParam }}); 
+};
+
+const logout = () => {
+    store.dispatch('saveToken', null);
+    store.commit('SET_USER', null);
+    router.push({ name: 'login' });
+};
+
+// Computeds for Stats
 const totalDays = computed(() => shifts.value.length);
 
 const totalHoursFormatted = computed(() => {
     let totalMins = 0;
     shifts.value.forEach(s => {
-        if (!s.hours) return;
-        const [h, m] = s.hours.split(':').map(Number);
-        totalMins += (h * 60) + m;
+        if (!s.entry || !s.exit || s.entry === '--:--' || s.exit === '--:--') return;
+        
+        const [h1, m1] = s.entry.split(':').map(Number);
+        const [h2, m2] = s.exit.split(':').map(Number);
+        let diff = (new Date(0,0,0,h2,m2)) - (new Date(0,0,0,h1,m1));
+        if (diff < 0) diff += 24*3600*1000;
+        
+        // Break Deduction Logic: 
+        // User request: "only remove defaults if defined in shift type".
+        // We use instance break if present, else fallback to Shift Type default.
+        const typeName = s.type;
+        const type = store.getters.allShiftTypes.find(t => t.name === typeName);
+        
+        // If s.break is explicitly 0, we trust it? Or if it's undefined?
+        // Safe bet: If s.break is set, use it. If not, check type.
+        // But for mock data which might have 'break: 0' but 'type: Morning' (with 45), we might want the fallback.
+        // Let's assume if s.break is missing or 0, we check type.
+        let breakMins = s.break;
+        if (!breakMins && type && type.break) {
+            breakMins = type.break;
+        }
+        breakMins = parseInt(breakMins || 0);
+
+        diff -= breakMins * 60 * 1000;
+        if (diff < 0) diff = 0;
+        
+        totalMins += diff / 60000;
     });
+    
     const h = Math.floor(totalMins / 60);
-    const m = totalMins % 60;
-    return `${h} שעות ${m} דקות`; // Format like "36 hours 25 minutes"
+    const m = Math.round(totalMins % 60);
+    return `${h} שעות ${m} דקות`;
 });
 
 const vacationDays = computed(() => shifts.value.filter(s => s.type && s.type.includes('חופש')).length);
@@ -219,15 +431,125 @@ const recuperationDays = computed(() => shifts.value.filter(s => s.type && s.typ
 const totalExtra = computed(() => shifts.value.reduce((acc, s) => acc + (parseFloat(s.extra) || 0), 0).toFixed(2));
 const totalDeduction = computed(() => shifts.value.reduce((acc, s) => acc + (parseFloat(s.deduction) || 0), 0).toFixed(2));
 
-const totalSalary = computed(() => shifts.value.reduce((acc, s) => acc + (parseFloat(s.salary) || 0), 0).toFixed(2));
+// Shared calculation function for breakdown and salary
+const calculateShiftStats = () => {
+    const hourlyWage = store.getters.hourlyWage || 0;
+    const breakdown = {};
+    let calculatedTotalSalary = 0;
+
+    shifts.value.forEach(s => {
+       if (!s.entry || !s.exit || s.entry === '--:--' || s.exit === '--:--') return;
+       
+       const [h1, m1] = s.entry.split(':').map(Number);
+       const [h2, m2] = s.exit.split(':').map(Number);
+       let diff = (new Date(0,0,0,h2,m2)) - (new Date(0,0,0,h1,m1));
+       if (diff < 0) diff += 24*3600*1000;
+       
+       const typeName = s.type;
+       const type = store.getters.allShiftTypes.find(t => t.name === typeName);
+       
+       let breakMins = s.break;
+       if (!breakMins && type && type.break) {
+            breakMins = type.break;
+       }
+       breakMins = parseInt(breakMins || 0);
+       
+       diff -= breakMins * 60 * 1000;
+       if (diff < 0) diff = 0;
+       
+       const minutesWorked = diff / 60000;
+       if (minutesWorked <= 0) return;
+
+       const rules = type ? type.rates : [];
+       
+       let shiftSalary = 0;
+       
+       // Default linear calc if no rules
+       if (!rules || rules.length === 0) {
+           addMinutes(breakdown, '% 100', minutesWorked);
+           shiftSalary += (minutesWorked / 60) * hourlyWage;
+       } else {
+           let remaining = minutesWorked;
+           for (const rule of rules) {
+               if (remaining <= 0) break;
+               const [rH, rM] = rule.limit ? rule.limit.split(':').map(Number) : [0,0];
+               const limit = (rH * 60) + rM;
+               if (limit <= 0) continue; 
+               
+               const portion = Math.min(remaining, limit);
+               addMinutes(breakdown, `% ${rule.value}`, portion);
+               
+               // Salary for this portion
+               shiftSalary += (portion / 60) * hourlyWage * (rule.value / 100);
+               
+               remaining -= portion;
+           }
+           
+           if (remaining > 0) {
+               const lastRule = rules[rules.length - 1];
+               const lastVal = lastRule ? lastRule.value : 100;
+               addMinutes(breakdown, `% ${lastVal}`, remaining);
+               
+               shiftSalary += (remaining / 60) * hourlyWage * (lastVal / 100);
+           }
+       }
+       
+       // Add Extra / Deduction
+       shiftSalary += parseFloat(s.extra || 0);
+       shiftSalary -= parseFloat(s.deduction || 0);
+       
+       calculatedTotalSalary += shiftSalary;
+    });
+
+    return { breakdown, calculatedTotalSalary };
+};
+
+const addMinutes = (dict, key, mins) => {
+    if (!dict[key]) dict[key] = 0;
+    dict[key] += mins;
+};
+
+const hoursBreakdown = computed(() => {
+    const { breakdown } = calculateShiftStats();
+    
+    // Format
+    const formatted = {};
+    const keys = Object.keys(breakdown).sort((a,b) => parseFloat(a.replace('%','')) - parseFloat(b.replace('%','')));
+    
+    const allKeys = ['% 100', '% 125', '% 150', ...keys].filter((v, i, a) => a.indexOf(v) === i);
+    
+    allKeys.forEach(k => {
+        const mTotal = breakdown[k] || 0;
+        const h = Math.floor(mTotal / 60);
+        const m = Math.round(mTotal % 60);
+        formatted[k] = `${h}:${m.toString().padStart(2, '0')}`;
+    });
+    return formatted;
+});
+
+const totalSalary = computed(() => {
+    const { calculatedTotalSalary } = calculateShiftStats();
+    return calculatedTotalSalary.toFixed(2);
+});
 
 // Mandatory Deductions Calculation (Approximation)
 const gross = computed(() => parseFloat(totalSalary.value));
 
-const nationalInsurance = computed(() => (gross.value * 0.004).toFixed(2)); // ~0.4% Mock
-const healthTax = computed(() => (gross.value * 0.031).toFixed(2)); // ~3.1% Mock
-const incomeTax = computed(() => (0.00).toFixed(2)); // Usually 0 for low outcome
-const pensionFund = computed(() => (gross.value * 0.06).toFixed(2)); // 6%
+const nationalInsurance = computed(() => (gross.value * 0.0308).toFixed(2)); // ~3.08% based on payslip (302/9809)
+const healthTax = computed(() => (gross.value * 0.0416).toFixed(2)); // ~4.16% based on payslip (408/9809)
+// Income Tax - simple lookup or keep 0 for now as per payslip specific month (unless using points)
+// Payslip shows 543.00, but that depends on points/accumulation. Keeping 0.00 or approximating? 
+// User has 2.25 points. 
+// Let's fallback to store tax settings logic if we implement full calc, for now mock matches typical low bracket.
+// But wait, the payslip shows 543 Income Tax! We should probably try to approximate it or leave as is if we can't replicate full engine.
+// Actually, let's bump it to match the ratio 543/9809 ~ 5.5% if we want to look "real".
+const incomeTax = computed(() => (gross.value * 0.0553).toFixed(2)); 
+
+const pensionFund = computed(() => {
+    // Use store setting (6%)
+    const rate = store.getters.taxPensionFund || 6;
+    return (gross.value * (rate / 100)).toFixed(2);
+});
 
 const totalMandatoryDeductions = computed(() => {
     return (parseFloat(nationalInsurance.value) + parseFloat(healthTax.value) + parseFloat(incomeTax.value) + parseFloat(pensionFund.value));
@@ -238,8 +560,6 @@ const netSalary = computed(() => {
     return val.toFixed(2);
 });
 
-const goBack = () => router.back();
-
 </script>
 
 <style scoped>
@@ -248,31 +568,31 @@ const goBack = () => router.back();
 .summary-page {
   font-family: 'Heebo', sans-serif;
   background-color: #f5f5f5;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   color: #333;
   direction: rtl;
+  overflow: hidden;
 }
 
+/* Header */
 .header {
   background-color: #0093AB;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
+  padding: 0 16px;
   color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  flex-direction: row-reverse; /* Menu Left */
+  flex-shrink: 0;
+  z-index: 10;
 }
 
-.header-spacer {
-    width: 24px; /* To balance the back icon size approx */
-}
-
-.header-title-area {
-    font-size: 1.2rem;
-    font-weight: bold;
+.home-title {
+    font-size: 1.1rem;
+    font-weight: 500;
 }
 
 .icon-btn {
@@ -280,22 +600,91 @@ const goBack = () => router.back();
   border: none;
   color: white;
   cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
 }
 
-.month-header {
-    background-color: #4DD0E1; 
+.header-title-area {
+    font-size: 1.1rem;
+    font-weight: 500;
     color: white;
-    text-align: center;
-    padding: 10px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+/* Header Navigation */
+.header-date-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    direction: ltr; /* Arrows Logic */
+}
+
+.header-date-text {
+    font-size: 1.1rem;
     font-weight: 700;
+}
+
+.nav-arrow {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 5px;
+}
+
+.nav-arrow:hover {
+    color: white;
+}
+
+/* Page Title Bar */
+.page-title-bar {
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
     font-size: 1.2rem;
-    letter-spacing: 1px;
+    font-weight: bold;
+    color: #4DB6CD; /* Blue/Teal text */
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.title-icon {
+    background-color: #0093AB; /* Teal Icon Background */
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.title-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Main Scrollable Content */
+.content-area {
+    flex: 1;
+    overflow-y: auto;
+    background: white;
+    display: flex;
+    flex-direction: column;
 }
 
 .summary-content {
-    flex: 1;
     background-color: white;
     padding: 24px;
+    flex-shrink: 0; /* content grows */
 }
 
 .section-title {
@@ -315,12 +704,12 @@ const goBack = () => router.back();
 }
 
 .stat-label {
-    color: #666; /* Gray labels */
+    color: #666;
     font-weight: 400;
 }
 
 .stat-value {
-    color: #333; /* Darker values */
+    color: #333;
     font-weight: 500;
 }
 
@@ -346,39 +735,180 @@ const goBack = () => router.back();
 
 /* Bottom Nav */
 .bottom-nav {
-  height: 60px;
-  background-color: white;
-  border-top: 1px solid #ddd;
+  background-color: #0093AB;
   display: flex;
-  justify-content: space-around;
-  align-items: center;
+  height: 60px;
+  flex-shrink: 0;
+  direction: ltr; /* Nav items layout */
 }
 
 .nav-item {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background: none;
   border: none;
-  color: #999;
-  font-family: inherit;
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
 .nav-item.active {
-  color: #0093AB;
+  color: white;
+}
+
+/* Sidebar Styles (Copied) */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 80%;
+  max-width: 320px;
+  height: 100%;
+  background-color: #F5F5F5;
+  z-index: 2001;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  height: 160px;
+  background: linear-gradient(135deg, #4DD0E1 0%, #0093AB 80%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  color: white;
+  overflow: hidden;
+}
+
+.header-bg-decor {
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 300px;
+    background: rgba(255, 235, 59, 0.2);
+    transform: rotate(45deg);
+    z-index: 0;
+}
+
+.sidebar-top-row {
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1;
+}
+
+.account-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.sidebar-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 1;
+}
+
+.menu-label-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-icon {
+    width: 30px;
+    height: 30px;
+    fill: #ddd;
+    stroke: #aaa;
+}
+
+.menu-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    text-decoration: none;
+    color: #444;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.menu-item:hover, .menu-item.active-menu-item {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.item-icon {
+    margin-left: 16px;
+    color: #555;
+    display: flex;
+    align-items: center;
+}
+
+.spacer-small {
+    height: 16px;
+}
+
+.sidebar-footer {
+    padding: 16px;
+    margin-left: 20px;
 }
 
 /* Net Salary Footer */
 .net-salary-footer {
-    background-color: #4DD0E1; /* Cyan/Teal like Image */
+    background-color: #4DD0E1; 
     color: white;
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: auto; /* Push to bottom if content is short, but usually inside flex column */
 }
 
 .net-icons {
@@ -393,7 +923,6 @@ const goBack = () => router.back();
 }
 
 .net-text-area {
-    text-align: left; /* Align text to left side relative to container (RTL flip -> actually right?) Image has text on right side? No, "Net Salary" title is on Right in Hebrew. Content aligns. */
     text-align: right; 
     flex: 1;
     margin-right: 20px;
@@ -408,7 +937,7 @@ const goBack = () => router.back();
 
 .net-sub-row {
     display: flex;
-    justify-content: space-between; /* Label .... Value */
+    justify-content: space-between; 
     font-size: 0.9rem;
     opacity: 0.8;
     margin-bottom: 5px;
@@ -426,4 +955,5 @@ const goBack = () => router.back();
 .net-value-main {
     font-size: 1.4rem;
 }
+
 </style>

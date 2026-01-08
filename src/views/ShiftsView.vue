@@ -11,17 +11,35 @@
       <button class="icon-btn" @click.stop="isMenuOpen = true">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
-      
-      <!-- Center: Title or Timer -->
-      <div class="header-title-area">
-          <span v-if="activeShift && (isViewingActiveShiftMonth || currentTab === 'entry')">{{ activeShiftTimer }} | {{ activeShiftSalary }} ש"ח</span>
-          <span v-else></span> 
-      </div>
 
-      <button class="icon-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-      </button>
+      <div class="header-date-nav">
+          <button class="nav-arrow" @click="prevMonth">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <span class="header-date-text">{{ currentMonthLabel }}</span>
+          <button class="nav-arrow" @click="nextMonth">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+      </div>
+      
+      <!-- Placeholder/Timer - if Timer is active, maybe show it small or hide. 
+           User wants "Like Image" which implies Title Bar. 
+           Let's hide Timer from main header to keep design clean, or move it to sub-header? 
+           Original code had activeShiftTimer centered. 
+           I'll keep a small indicator or just spacer if not active.
+      -->
+      <div class="header-right-spacer">
+          <span v-if="activeShift && (isViewingActiveShiftMonth || currentTab === 'entry')" class="mini-timer">{{ activeShiftTimer }}</span>
+      </div>
     </header>
+
+    <!-- Page Title Bar -->
+    <div class="page-title-bar">
+        <span>משמרות</span>
+        <div class="title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </div>
+    </div>
 
 
 
@@ -34,11 +52,7 @@
              ======================= -->
         <div v-if="currentTab === 'shifts'" class="tab-view shifts-view" key="shifts">
           <!-- Month Selector -->
-          <div class="month-selector">
-            <span class="month-side">{{ prevMonthLabel }}</span>
-            <span class="current-month">{{ currentMonthLabel }}</span>
-            <span class="month-side">{{ nextMonthLabel }}</span>
-          </div>
+          <!-- Month Selector REMOVED -->
 
           <!-- Table Header -->
           <div class="table-header">
@@ -196,7 +210,7 @@
             </div>
 
             <div class="detail-form-row">
-               <label>הפסקה:</label>
+               <label style="color: red;">הפסקה:</label>
                <div class="input-with-unit">
                  <span class="unit-text">דק'</span>
                  <input type="number" :value="editingShift.break" readonly class="input-box" @click="openBreakModal" />
@@ -424,7 +438,7 @@
           <div class="input-title-divider" style="background-color: #4facfe;"></div>
           
           <div class="shift-type-body">
-             <label v-for="type in mockPaymentTypes" :key="type.id" class="shift-type-option" @click.prevent="selectPaymentType(type.name)">
+             <label v-for="type in paymentTypes" :key="type.id" class="shift-type-option" @click.prevent="selectPaymentType(type.name)">
                <span class="option-label">{{ type.name }}</span>
                <input type="radio" :checked="tempPaymentType === type.name" class="option-radio" readonly>
              </label>
@@ -443,7 +457,7 @@
           <div class="input-title-divider" style="background-color: #4facfe;"></div>
           
           <div class="shift-type-body">
-             <label v-for="type in mockSickTypes" :key="type.id" class="shift-type-option" @click.prevent="selectSickDay(type.name)">
+             <label v-for="type in sickTypes" :key="type.id" class="shift-type-option" @click.prevent="selectSickDay(type.name)">
                <span class="option-label">{{ type.name }}</span>
                <input type="radio" :checked="tempSickDayType === type.name" class="option-radio" readonly>
              </label>
@@ -618,26 +632,7 @@
         </button>
     </nav>
 
-    <!-- Weekly Plan Selector Modal -->
-    <transition name="fade">
-      <div v-if="isPlanSelectorModalOpen" class="input-modal-overlay" @click.self="isPlanSelectorModalOpen = false">
-        <div class="input-modal">
-          <div class="input-modal-title">
-             נא לבחור סידור עבודה
-          </div>
-          <div class="input-title-divider"></div>
-          
-          <div class="shift-type-body">
-              <div v-for="plan in availableWeeklyPlans" :key="plan.id" class="radio-item" @click="selectWeeklyPlan(plan.id)">
-                <div class="radio-circle" :class="{ selected: activeWeeklyPlanId === plan.id }">
-                  <div v-if="activeWeeklyPlanId === plan.id" class="radio-inner"></div>
-                </div>
-                <span class="radio-label">{{ plan.label }}</span>
-              </div>
-          </div>
-        </div>
-      </div>
-    </transition>
+    <!-- Weekly Plan Selector Modal Removed (Integrated into Quick Shift Modal as dropdown) -->
 
     <!-- FAB Menu -->
     <div v-if="isFabMenuOpen" class="fab-overlay" @click="isFabMenuOpen = false"></div>
@@ -658,10 +653,14 @@
     </transition-group>
 
     <!-- FAB Button -->
-    <button class="fab" v-if="currentTab === 'shifts'" @click.stop="handleFabClick" :class="{ 'delete-mode': isSelectionMode, 'fab-rotate': isFabMenuOpen }">
-       <svg v-if="isSelectionMode" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-       <svg v-else xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-    </button>
+    <!-- FAB Wrapper with Label -->
+    <div class="fab-wrapper" v-if="currentTab === 'shifts'" @click.stop="handleFabClick">
+      <button class="fab" @click.stop="handleFabClick" :class="{ 'delete-mode': isSelectionMode, 'fab-rotate': isFabMenuOpen }">
+         <svg v-if="isSelectionMode" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+         <svg v-else xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+      <span class="fab-label" v-if="!isSelectionMode" :class="{ 'fade-out-label': isFabMenuOpen }">משמרת</span>
+    </div>
     
     <!-- Weekly Plan Shift Modal (formerly Quick Shift) -->
     <transition name="fade">
@@ -673,42 +672,102 @@
           <div class="input-modal-body" style="padding: 20px;">
              <div style="text-align: center; color: #777; margin-bottom: 10px;">נא לבחור סידור עבודה:</div>
              
-             <!-- Weekly Plan Selector -->
-             <button class="shift-type-selector-quick" @click.stop="isPlanSelectorModalOpen = true" style="width: 100%; background-color: #0093AB; color: white; padding: 12px; border: none; border-radius: 4px; margin-bottom: 20px; font-size: 1.1rem; cursor: pointer;">
-                {{ selectedPlanLabel || 'נא לבחור סידור עבודה' }}
-             </button>
+             <!-- Weekly Plan Selector Dropdown Trigger -->
+             <div class="dropdown-wrapper" style="position: relative; margin-bottom: 20px;">
+                 <button class="shift-type-selector-quick" @click.stop="togglePlanDropdown" style="width: 100%; background-color: #0093AB; color: white; padding: 12px; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="flex-grow: 1; text-align: center;">{{ selectedPlanLabel || 'נא לבחור סידור עבודה' }}</span>
+                    <svg :style="{ transform: isPlanDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                 </button>
+
+                 <!-- Inline Dropdown Content -->
+                 <transition name="fade">
+                    <div v-if="isPlanDropdownOpen" class="dropdown-content" style="background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 10px; position: absolute; top: 100%; left: 0; right: 0; z-index: 100;">
+                        
+                        <!-- Month Navigator -->
+                        <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px; direction: ltr; background-color: #f9f9f9; border-radius: 4px;">
+                            <button @click.stop="prevPlanSelectorMonth" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color:#333; padding: 0 10px;">&lt;</button>
+                            <span style="font-weight: bold; font-size: 1rem; color: #555;">{{ planSelectorMonthLabel }}</span>
+                            <button @click.stop="nextPlanSelectorMonth" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color:#333; padding: 0 10px;">&gt;</button>
+                        </div>
+                        
+                        <div class="plans-list" style="max-height: 200px; overflow-y: auto;">
+                            <div v-if="availableWeeklyPlans.length === 0" style="text-align:center; color:#999; padding: 15px;">
+                                אין סידורי עבודה לחודש זה
+                            </div>
+
+                            <div v-for="plan in availableWeeklyPlans" :key="plan.id" class="dropdown-item" @click.stop="selectWeeklyPlan(plan.id)" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center;">
+                                <div class="radio-circle" :class="{ selected: activeWeeklyPlanId === plan.id }" style="margin-left: 10px;"> <!-- Margin left for RTL -->
+                                    <div v-if="activeWeeklyPlanId === plan.id" class="radio-inner"></div>
+                                </div>
+                                <span class="radio-label" style="font-size: 0.95rem;">{{ plan.label }}</span>
+                            </div>
+                        </div>
+                    </div>
+                 </transition>
+             </div>
              
              <!-- Calendar -->
              <div class="calendar-container" style="border: 1px solid #eee; border-radius: 8px; padding: 10px;">
-                 <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 10px; direction: ltr;">
-                    <button @click="prevQuickMonth" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color:#333;">&lt;</button>
-                    <span style="font-weight: bold; font-size: 1.1rem; color: #555;">{{ quickShiftMonthLabel }}</span>
-                    <button @click="nextQuickMonth" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color:#333;">&gt;</button>
-                 </div>
+                     <span style="font-weight: bold; font-size: 1.1rem; color: #555; width: 100%; text-align: right; display:block;">{{ quickShiftMonthLabel }}</span>
                  
                  <!-- Days Header -->
-                 <div class="calendar-grid-header" style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 10px; font-weight: bold; color: white; background-color: #0093AB; padding: 8px 0; direction: rtl;">
-                    <div>א</div><div>ב</div><div>ג</div><div>ד</div><div>ה</div><div>ו</div><div>ש</div>
+                 <div class="calendar-grid-header" style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; margin-bottom: 10px; font-weight: bold; color: white; background-color: #0093AB; padding: 8px 0; direction: rtl;">
+                    <div>א</div><div>ב</div><div>ג</div><div>ד</div><div>ה</div><div>ו</div>
                  </div>
                  
                  <!-- Days Grid -->
-                 <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; direction: rtl;">
+                 <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; direction: rtl;">
                      <div v-for="(day, idx) in quickShiftGrid" :key="idx" 
                           class="calendar-day" 
-                          :class="{ 'empty': !day, 'pressing': pressingDay === day, 'disabled': day && !isDaySelectable(day) }"
+                          :class="{ 'empty': !day, 'pressing': pressingDay === day, 'disabled': day && !isDaySelectable(day), 'in-plan-range': day && day.inPlan }"
                           @mousedown="day && isDaySelectable(day) ? startPress(day) : null"
                           @touchstart="day && isDaySelectable(day) ? startPress(day) : null"
                           @mouseup="day && isDaySelectable(day) ? endPress(day) : null"
                           @touchend="day && isDaySelectable(day) ? endPress(day) : null"
                           @mouseleave="cancelPress"
                           @touchcancel="cancelPress"
-                          :style="{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (day && isDaySelectable(day)) ? 'pointer' : 'not-allowed', borderRadius: '4px', fontWeight: '500', userSelect: 'none', opacity: (day && !isDaySelectable(day)) ? '0.3' : '1' }"
+                          :style="{ 
+                              height: '40px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center', 
+                              cursor: (day && isDaySelectable(day)) ? 'pointer' : 'not-allowed', 
+                              borderRadius: '4px', 
+                              fontWeight: '500', 
+                              userSelect: 'none', 
+                              opacity: (day && !isDaySelectable(day)) ? '0.3' : '1',
+                              backgroundColor: (day && day.inPlan) ? 'rgba(0, 147, 171, 0.2)' : (pressingDay === day ? '#B2DFDB' : 'transparent'),
+                              border: (day && day.inPlan) ? '1px solid #0093AB' : 'none',
+                              color: (day && day.inPlan) ? '#0093AB' : 'inherit'
+                          }"
                      >
-                        {{ day }}
+                        {{ day ? day.label : '' }}
                      </div>
                  </div>
              </div>
              
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Excel Report Modal -->
+    <transition name="fade">
+      <div v-if="isExcelModalOpen" class="input-modal-overlay" @click.self="isExcelModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title" style="color: #4facfe;">
+             קובץ אקסל
+          </div>
+          <div class="input-title-divider" style="background-color: #4facfe;"></div>
+          
+          <div class="input-modal-body" style="padding: 20px; text-align: center;">
+             <p style="margin-bottom: 20px; font-size: 1.1rem; color: #555;">האם לשלוח קובץ אקסל למייל או לצפות בו עכשיו?</p>
+          </div>
+
+          <div class="input-modal-footer">
+               <button class="modal-btn" style="color: #2196F3;" @click="handleExcelAction('email')">שלח למייל</button>
+               <button class="modal-btn" style="color: grey;" @click="isExcelModalOpen = false">ביטול</button>
+               <button class="modal-btn" style="color: #2196F3;" @click="handleExcelAction('view')">צפה בקובץ</button>
           </div>
         </div>
       </div>
@@ -778,18 +837,18 @@
           </span>
           <span>הגדרת סוג משמרת</span>
         </router-link>
-        <a href="#" class="menu-item">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          </span>
-          <span>דוח אקסל</span>
-        </a>
-        <div class="spacer-small"></div>
-        <a href="#" class="menu-item">
+        <router-link to="/settings" class="menu-item" @click="isMenuOpen = false">
           <span class="item-icon">
              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
           </span>
           <span>הגדרות</span>
+        </router-link>
+        <div class="spacer-small"></div>
+        <a href="#" class="menu-item" @click.prevent="openExcelModal">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </span>
+          <span>דוח אקסל</span>
         </a>
         <div class="spacer-small"></div>
         
@@ -811,7 +870,8 @@
 <script setup>
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex'; // or import store directly if using options api, but composition api usually uses useStore
+import { useStore } from 'vuex';
+import api from '../services/api'; 
 // Wait, this project uses options store in src/store/index.js.
 // Best way in setup script is:
 import store from '../store'; 
@@ -925,16 +985,20 @@ const handleRowClick = (shift, index) => {
   editingShift.type = shift.type || 'בוקר'; 
   editingShift.entry = shift.entry;
   editingShift.exit = shift.exit;
-  editingShift.break = shift.break || 0;
-  editingShift.extra = shift.extra || 0.0;
-  editingShift.deduction = shift.deduction || 0.0;
+  
+  // Apply defaults if values are missing, based on the shift type
+  const defaults = getShiftDefaults(editingShift.type);
+
+  editingShift.break = shift.break || defaults.break;
+  editingShift.extra = shift.extra || defaults.extra;
+  editingShift.deduction = shift.deduction || defaults.deduction;
+  
   editingShift.notes = shift.notes || ''; 
   
   isDetailModalOpen.value = true;
 };
 
 const calculateShiftData = (shiftData) => {
-    // Basic calculation for Hours and Salary
     let hoursStr = '0:00';
     let salaryStr = '0.00';
     
@@ -948,8 +1012,11 @@ const calculateShiftData = (shiftData) => {
         let diffMs = d2 - d1;
         if (diffMs < 0) diffMs += 24 * 3600 * 1000; // overnight
         
-        // Subtract break
-        diffMs -= (shiftData.break || 0) * 60 * 1000;
+        // Strict Break Deduction: (Exit - Entry) - ShiftBreak
+        // The shiftData.break comes from defaults (Shift Type) or user edit.
+        const breakDurationMs = (shiftData.break || 0) * 60 * 1000;
+        diffMs -= breakDurationMs;
+        
         if (diffMs < 0) diffMs = 0;
         
         const h = Math.floor(diffMs / 3600000);
@@ -957,16 +1024,59 @@ const calculateShiftData = (shiftData) => {
         
         hoursStr = `${h}:${m.toString().padStart(2,'0')}`;
         
-        // Salary
-        const hoursFloat = diffMs / 3600000;
-        const rate = 50; // hardcoded
-        let val = hoursFloat * rate;
+        // --- Dynamic Salary Calculation (Tiered Overtime) ---
         
-        val += parseFloat(shiftData.extra || 0);
-        val -= parseFloat(shiftData.deduction || 0);
+        const hourlyWage = store.getters.hourlyWage || 0;
+        const shiftType = store.getters.allShiftTypes.find(t => t.name === shiftData.type);
+        const rules = shiftType ? shiftType.rates : [];
         
-        if (val < 0) val = 0;
-        salaryStr = val.toFixed(2);
+        let calculatedSalary = 0;
+        let totalMinutesWorked = diffMs / 60000;
+        
+        if (!rules || rules.length === 0) {
+            // Fallback: Flat 100%
+            calculatedSalary = (totalMinutesWorked / 60) * hourlyWage;
+        } else {
+            let remainingMinutes = totalMinutesWorked;
+            
+            for (const rule of rules) {
+                if (remainingMinutes <= 0) break;
+                
+                // Parse rule limit (HH:MM) to minutes
+                const [rH, rM] = rule.limit ? rule.limit.split(':').map(Number) : [0,0];
+                const ruleLimitMins = (rH * 60) + rM;
+                
+                // If limit is 0 (unlimited?) or just very high, usually user puts real limit.
+                // If user puts 00:00, ignore or treat as 0 duration? Treat as 0 to be safe.
+                if (ruleLimitMins <= 0) continue; 
+                
+                const minutesInTier = Math.min(remainingMinutes, ruleLimitMins);
+                const tierWage = hourlyWage * (rule.value / 100);
+                
+                calculatedSalary += (minutesInTier / 60) * tierWage;
+                remainingMinutes -= minutesInTier;
+            }
+            
+            // Handle leftovers if shift exceeds all defined tiers (Open-ended overtime)
+            if (remainingMinutes > 0) {
+                // Use the last tier's rate? Or a default high rate?
+                // Logic: "Everything else". If user defined 8h @ 100, 2h @ 125, and worked 12h...
+                // The last 2h are undefined. 
+                // Best practice: Continue with the LAST defined rate.
+                const lastRule = rules[rules.length - 1];
+                const lastRateVal = lastRule ? lastRule.value : 100;
+                const finalWage = hourlyWage * (lastRateVal / 100);
+                
+                calculatedSalary += (remainingMinutes / 60) * finalWage;
+            }
+        }
+
+        // Add Extras / Deduct reductions
+        calculatedSalary += parseFloat(shiftData.extra || 0);
+        calculatedSalary -= parseFloat(shiftData.deduction || 0);
+        
+        if (calculatedSalary < 0) calculatedSalary = 0;
+        salaryStr = calculatedSalary.toFixed(2);
     }
     
     return { hoursStr, salaryStr };
@@ -1322,38 +1432,198 @@ const isEntryMode = ref(false);
 const activeShiftType = ref('בוקר');
 
 // Weekly Plan for Quick-Add
-const isPlanSelectorModalOpen = ref(false);
-const weeklyPlansRef = mockWeeklyPlans; // Expose to template
+// const isPlanSelectorModalOpen = ref(false); // Removed
+const isPlanDropdownOpen = ref(false); 
+const weeklyPlansRef = computed(() => store.getters.allWeeklyPlans); // Expose to template
 const activeWeeklyPlanId = ref(''); // Start with no selection
 const selectedPlanLabel = ref(''); // Track selected plan label
+const planSelectorDate = ref(new Date()); // State for the month selector
 
-// Filter plans to show only future ones (weekEnd >= today)
+const planSelectorMonthLabel = computed(() => {
+    const d = planSelectorDate.value;
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const y = d.getFullYear();
+    return `${m}/${y}`;
+});
+
+const prevPlanSelectorMonth = () => {
+    const d = new Date(planSelectorDate.value);
+    d.setMonth(d.getMonth() - 1);
+    planSelectorDate.value = d;
+};
+
+const nextPlanSelectorMonth = () => {
+    const d = new Date(planSelectorDate.value);
+    d.setMonth(d.getMonth() + 1);
+    planSelectorDate.value = d;
+};
+
+// Filter plans to show only those relevant to the selected month
 const availableWeeklyPlans = computed(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return mockWeeklyPlans.filter(plan => {
-        const endDate = new Date(plan.weekEnd);
-        return endDate >= today;
-    });
+    const selectedMonth = planSelectorDate.value.getMonth();
+    const selectedYear = planSelectorDate.value.getFullYear();
+    
+    // Helper to get month/year from ISO string "YYYY-MM-DD"
+    const getMonthYear = (dateStr) => {
+        const d = new Date(dateStr);
+        return { m: d.getMonth(), y: d.getFullYear() };
+    };
+
+    return store.getters.allWeeklyPlans.filter(plan => {
+        // Include if start or end date falls in selected month
+        const start = getMonthYear(plan.weekStart);
+        const end = getMonthYear(plan.weekEnd);
+        
+        const startsInMonth = start.m === selectedMonth && start.y === selectedYear;
+        const endsInMonth = end.m === selectedMonth && end.y === selectedYear;
+        const spansMonth = (new Date(plan.weekStart) < new Date(selectedYear, selectedMonth, 1)) && (new Date(plan.weekEnd) > new Date(selectedYear, selectedMonth + 1, 0));
+
+        return startsInMonth || endsInMonth || spansMonth;
+    }).sort((a, b) => new Date(a.weekStart) - new Date(b.weekStart));
 });
 
 const activeWeeklyPlan = computed(() => {
-    return mockWeeklyPlans.find(p => p.id === activeWeeklyPlanId.value) || null;
+    return store.getters.allWeeklyPlans.find(p => p.id === activeWeeklyPlanId.value) || null;
 });
+
+// Excel Report Logic
+const isExcelModalOpen = ref(false);
+
+const openExcelModal = () => {
+    isExcelModalOpen.value = true;
+    isMenuOpen.value = false;
+};
+
+const handleExcelAction = async (action) => {
+    try {
+        const d = currentDate.value;
+        const payload = {
+            month: d.getMonth() + 1,
+            year: d.getFullYear(),
+            shifts: shifts.value.map(s => ({
+                date: new Date(d.getFullYear(), d.getMonth(), s.dayNumber).toISOString(),
+                shiftType: s.type,
+                entryTime: s.entry,
+                exitTime: s.exit,
+                breakDuration: parseFloat(s.break) || 0,
+                additions: parseFloat(s.extra) || 0,
+                deductions: parseFloat(s.deduction) || 0,
+                comments: '', 
+                hours: parseFloat(s.hours) || 0,
+                wage: parseFloat(s.salary) || 0
+            })),
+            totals: {
+                 totalHours: parseFloat(totalHours.value) || 0,
+                 totalAdditions: 0, 
+                 totalDeductions: 0, 
+                 grossWage: 0, 
+                 netWage: parseFloat(totalSalary.value) || 0,
+                 healthTax: 0,
+                 nationalInsurance: 0,
+                 incomeTax: 0,
+                 pension: 0,
+                 studyFund: 0
+            },
+            emailAddress: store.getters.currentUser?.email || 'user@example.com' 
+        };
+        
+        // Approximations for totals
+        payload.shifts.forEach(s => {
+            payload.totals.totalAdditions += s.additions;
+            payload.totals.totalDeductions += s.deductions;
+        });
+        payload.totals.grossWage = payload.totals.netWage; // Simplification
+
+        if (action === 'view') {
+           const response = await api.post('reports/excel-view', payload, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Report_${payload.month}_${payload.year}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } else if (action === 'email') {
+             await api.post('reports/excel-email', payload);
+             showToast('נשלח למייל בהצלחה', 'success');
+        }
+        isExcelModalOpen.value = false;
+    } catch (e) {
+        console.error(e);
+        showToast('שגיאה ביצירת דוח', 'error');
+    }
+};
 
 const selectWeeklyPlan = (planId) => {
     activeWeeklyPlanId.value = planId;
-    const plan = mockWeeklyPlans.find(p => p.id === planId);
+    const plan = store.getters.allWeeklyPlans.find(p => p.id === planId);
     selectedPlanLabel.value = plan ? plan.label : '';
-    isPlanSelectorModalOpen.value = false;
+    
+    // Jump to the plan's start date, OR prioritize current view month if relevant
+    if (plan && plan.weekStart) {
+        const pStart = new Date(plan.weekStart);
+        const pEnd = new Date(plan.weekEnd);
+        
+        const cDate = new Date(currentDate.value);
+        const cMonth = cDate.getMonth();
+        const cYear = cDate.getFullYear();
+        
+        const sMonth = pStart.getMonth();
+        const sYear = pStart.getFullYear();
+        
+        const eMonth = pEnd.getMonth();
+        const eYear = pEnd.getFullYear();
+        
+        // Check if navigation month matches either start or end month of the plan
+        const matchesStart = (cMonth === sMonth && cYear === sYear);
+        const matchesEnd = (cMonth === eMonth && cYear === eYear);
+        
+        if (matchesStart || matchesEnd) {
+             // If user is currently viewing one of the relevant months, stay on it.
+             quickShiftDate.value = new Date(currentDate.value);
+        } else {
+             // otherwise default to start
+             quickShiftDate.value = new Date(plan.weekStart);
+        }
+    }
+    
+    isPlanDropdownOpen.value = false;
 };
 
-// Check if a day in the calendar is selectable (today or future)
-const isDaySelectable = (day) => {
-    if (!day) return false;
-    const selectedDate = new Date(quickShiftDate.value);
-    selectedDate.setDate(day);
+const togglePlanDropdown = () => {
+    isPlanDropdownOpen.value = !isPlanDropdownOpen.value;
+};
+
+// Check if a day in the calendar is selectable (today or future + within plan range)
+const isDaySelectable = (val) => {
+    if (!val) return false;
+    
+    // Support both day number (legacy) and day object logic
+    let selectedDate;
+    if (val.date) {
+        selectedDate = new Date(val.date);
+    } else {
+        selectedDate = new Date(quickShiftDate.value);
+        if (typeof val === 'number') {
+             selectedDate.setDate(val);
+        }
+    }
     selectedDate.setHours(0, 0, 0, 0);
+    
+    // Check Plan Range if active
+    if (activeWeeklyPlan.value) {
+        const start = new Date(activeWeeklyPlan.value.weekStart);
+        start.setHours(0,0,0,0);
+        const end = new Date(activeWeeklyPlan.value.weekEnd);
+        end.setHours(0,0,0,0);
+        
+        // If date is outside the plan's range, disable it
+        if (selectedDate < start || selectedDate > end) {
+            return false;
+        }
+        // If in plan range, allow it even if past
+        return true;
+    }
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1609,7 +1879,7 @@ const getShiftTypeClass = (type) => {
     return '';
 };
 
-const handleEntry = () => {
+const handleEntry = async () => {
     const now = new Date();
     const h = now.getHours().toString().padStart(2, '0');
     const m = now.getMinutes().toString().padStart(2, '0');
@@ -1633,26 +1903,31 @@ const handleEntry = () => {
         fullDate: new Intl.DateTimeFormat('en-GB').format(now),
         break: 0,
         extra: 0,
-        deduction: 0
+        deduction: 0,
+        date: now.toISOString()
     });
     
     // VALIDATE OVERLAP -- Pass newShift, ignore index (-1), shifts.value (current list), and now
-    if (checkOverlap(newShift, -1, shifts.value, now)) {
+    const allShifts = store.getters.allShifts;
+    if (checkOverlap(newShift, -1, allShifts, now)) {
         showToast('error', 'שגיאה: חפיפה בשעות המשמרת עם משמרת קיימת');
         dragX.value = 0; // Reset slider
         return;
     }
 
-    shifts.value.push(newShift);
-    
-    // Set Active
-    activeShift.value = newShift;
-    startTimer(entryTime);
+    try {
+        await store.dispatch('addShift', newShift);
+        activeShift.value = newShift; // Temporary until reload or if using optimistic
+        startTimer(entryTime);
 
-    // 2. Wait 2 seconds then Switch to shifts tab
-    setTimeout(() => {
-        currentTab.value = 'shifts';
-    }, 2000);
+        // 2. Wait 2 seconds then Switch to shifts tab
+        setTimeout(() => {
+            currentTab.value = 'shifts';
+        }, 2000);
+    } catch (e) {
+        showToast('error', 'שגיאה בהוספת משמרת');
+        dragX.value = 0;
+    }
 };
 
 onUnmounted(() => {
@@ -1718,7 +1993,7 @@ const endDrag = () => {
     }
 };
 
-const handleSliderAction = () => {
+const handleSliderAction = async () => {
     if (activeShift.value) {
         // Exit Logic
         const now = new Date();
@@ -1727,21 +2002,34 @@ const handleSliderAction = () => {
         const exitTime = `${h}:${m}`;
         
         // VALIDATE OVERLAP FOR EXIT
-        // We create a temporary copy with the proposed exit time to test
         const candidate = { ...activeShift.value, exit: exitTime };
-        const idx = shifts.value.indexOf(activeShift.value);
-        
-        if (checkOverlap(candidate, idx, shifts.value, now)) {
+        const allShifts = store.getters.allShifts;
+        // Ignore self
+        const others = allShifts.filter(s => s !== activeShift.value && s.id !== activeShift.value.id); // check ref and id
+
+        if (checkOverlap(candidate, -1, others, now)) {
              showToast('error', 'שגיאה: חפיפה בשעות המשמרת עם משמרת קיימת');
              dragX.value = 0; // Reset slider
              return;
         }
 
-        activeShift.value.exit = exitTime;
-        const { hoursStr, salaryStr } = calculateShiftData(activeShift.value);
-        activeShift.value.hours = hoursStr;
-        activeShift.value.salary = salaryStr;
+        const toUpdate = { ...activeShift.value }; 
+        toUpdate.exit = exitTime;
+        const { hoursStr, salaryStr } = calculateShiftData(toUpdate);
+        toUpdate.hours = hoursStr;
+        toUpdate.salary = salaryStr;
         
+        try {
+            // Optimistic Update local for UI feedback?
+            // shifts array is computed from store. Mutating store state?
+            // Dispatch update
+            await store.dispatch('updateShift', { id: toUpdate.id, shift: toUpdate });
+            // Update local ref to show correct data until transition
+            activeShift.value = toUpdate; 
+        } catch (e) {
+            console.error(e);
+        }
+
         if (timerInterval) clearInterval(timerInterval);
         
         setTimeout(() => {
@@ -1764,16 +2052,18 @@ const handleSliderAction = () => {
              // Auto-switch to current month instead of blocking
              currentDate.value = now;
              
-             // Wait for fetch to complete before adding the new shift to avoid overwrite
-             fetchShifts(now).then(() => {
-                 handleEntry(); // Now contains validation
+             // Wait for reactivity/fetch? 
+             // Just invoke logic.
+             // Wait small tick?
+             setTimeout(() => {
+                 handleEntry(); 
                  setTimeout(() => { dragX.value = 0; }, 2000); 
-             });
+             }, 100);
              return;
         }
 
         // Already on same month
-        handleEntry(); // Now contains validation
+        handleEntry(); 
         setTimeout(() => { dragX.value = 0; }, 2000); 
     }
 };
@@ -1872,11 +2162,11 @@ const selectSickDay = async (subType) => {
     }
 };
 
-const confirmSickDay = (dateStr) => {
+const confirmSickDay = async (dateStr) => {
     // Parse dateStr DD/MM/YYYY
     const [d, mStr, yVal] = dateStr.split('/');
     const dStr = d.toString().padStart(2, '0');
-    const mStrOp = mStr.toString().padStart(2, '0'); // mStr might be '1' or '01'
+    const mStrOp = mStr.toString().padStart(2, '0');
     const year = parseInt(yVal);
     
     // Date Object for check
@@ -1897,59 +2187,38 @@ const confirmSickDay = (dateStr) => {
         extra: 0,
         deduction: 0,
         isVacation: true,
-        notes: tempSickDayType.value
+        notes: tempSickDayType.value,
+        date: dateObj.toISOString() // API Field
     };
 
-    // Determine target view key
-    // We check against the MONTH of the NEW SHIFT, not necessarily current view?
-    // Actually current logic uses mockData[key]. Key is from newShift.
-    const key = `${year}-${mStrOp}`;
-    
-    // Current View Key
-    const viewY = currentDate.value.getFullYear();
-    const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
-    const viewKey = `${viewY}-${viewM}`;
-
-    let targetList = (key === viewKey) ? shifts.value : (mockData[key] || []);
-
-    const conflict = checkOverlap(newShift, -1, targetList, dateObj);
+    // Check Overlap against Store
+    const allShifts = store.getters.allShifts;
+    // We can optimize by filtering only relevant month if checkOverlap scans all
+    const conflict = checkOverlap(newShift, -1, allShifts, dateObj); 
     if (conflict) {
             const conflictDesc = conflict.isVacation ? conflict.type : `${conflict.entry}-${conflict.exit}`;
             alert(`שגיאה: חפיפה בתאריך ${fullDate} עם משמרת קיימת (${conflictDesc}).\nלא ניתן להוסיף ${tempSickDayType.value}.`);
             return; 
     }
 
-    if (key === viewKey) {
-            shifts.value.push(newShift);
-    } else {
-            if (targetList.length === 0 && !mockData[key]) {
-                mockData[key] = [];
-                targetList = mockData[key];
-            }
-            targetList.push(newShift);
+    try {
+        await store.dispatch('addShift', newShift);
+        showToast('success', `נוסף: ${tempSickDayType.value}`);
+    } catch (e) {
+        showToast('error', 'שגיאה בשמירת נתונים');
     }
-    
-    showToast('success', `נוסף: ${tempSickDayType.value}`);
 };
 
 
-const confirmMonthlyPayment = () => {
+const confirmMonthlyPayment = async () => {
     if (!monthlyPaymentAmount.value) {
         alert('יש להזין סכום');
         return;
     }
     
-    const now = new Date();
-    // Use first day of month? Or Today? User didn't specify. Today is safest.
-    // Actually Monthly Payment usually implies "For this month".
-    // I'll put it on the 1st of the VIEWED month if possible? 
-    // Logic: If I am viewing Feb, I want to add for Feb.
-    // But currently I am using `currentDate.value` for view.
-    // Let's use `currentDate.value` (Viewed Month).
-    // Ensure it's valid date (e.g. 1st).
-    
+    // Ensure 1st of VIEWED month
     const dObj = new Date(currentDate.value);
-    dObj.setDate(1); // 1st of view month
+    dObj.setDate(1); 
     
     const d = dObj.getDate().toString().padStart(2, '0');
     const m = (dObj.getMonth() + 1).toString().padStart(2, '0');
@@ -1970,48 +2239,22 @@ const confirmMonthlyPayment = () => {
         extra: 0,
         deduction: 0,
         isVacation: true,
-        notes: 'תשלום חודשי'
+        notes: 'תשלום חודשי',
+        date: dObj.toISOString()
     };
-
-    // Assuming we are viewing the target month
-    // If overlap?
-    // "Monthly Payment" on 1st might overlap with existing shift on 1st.
-    // If conflict, maybe allow? or Block?
-    // If it's pure payment, maybe allow.
-    // But checkOverlap will block.
-    // Let's try to add overlap check but maybe warn only?
-    // Or just let it block and user has to delete shift on 1st?
-    // "Bonus" usually shouldn't block.
-    // I'll disable overlap check for 'תשלום חודשי'?
-    // Wait, ref to `checkOverlap`: it checks timestamps.
-    // 'תשלום חודשי': entry --:--.
-    // `checkOverlap` returns null if !candTimes.start && !candTimes.isAllDay.
-    // `isVacation`=true implies `isAllDay`=true in `checkOverlap`?
-    // Yes.
-    // So it WILL block.
-    // I should make `isVacation`=false for 'תשלום חודשי'?
-    // But then UI hides entry/exit col?
-    // Let's keep isVacation=true.
-    // I won't check overlap for this specific type to allow co-existence.
     
-    // Add directly
-     const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
-     const viewY = currentDate.value.getFullYear();
-     const viewKey = `${viewY}-${viewM}`;
-     const key = `${y}-${m}`;
-     
-     if (key === viewKey) {
-            shifts.value.push(newShift);
-    } else {
-            if (!mockData[key]) mockData[key] = [];
-            mockData[key].push(newShift);
+    // No overlap check for monthly payment (bonus)
+    
+    try {
+        await store.dispatch('addShift', newShift);
+        isMonthlyPaymentModalOpen.value = false;
+        showToast('success', `נוסף תשלום חודשי: ${newShift.salary}`);
+    } catch (e) {
+        showToast('error', 'שגיאה בשמירת נתונים');
     }
-    
-    isMonthlyPaymentModalOpen.value = false;
-    showToast('success', `נוסף תשלום חודשי: ${newShift.salary}`);
 };
 
-const confirmRecuperation = () => {
+const confirmRecuperation = async () => {
     if (!recuperationDays.value) {
         alert('יש להזין כמות ימים');
         return;
@@ -2021,6 +2264,7 @@ const confirmRecuperation = () => {
     if (isNaN(days) || days <= 0) return;
     
     // Formula: Days * 8 * 45
+    // Note: Use stored wage setting? For now fixed as per user code.
     const totalSalary = days * 8 * 45;
     
     // Create Entry (Today/1st of Month)
@@ -2046,23 +2290,17 @@ const confirmRecuperation = () => {
         extra: 0,
         deduction: 0,
         isVacation: true,
-        notes: `הבראה (${days} ימים)`
+        notes: `הבראה (${days} ימים)`,
+        date: dObj.toISOString()
     };
 
-     const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
-     const viewY = currentDate.value.getFullYear();
-     const viewKey = `${viewY}-${viewM}`;
-     const key = `${y}-${m}`;
-     
-     if (key === viewKey) {
-            shifts.value.push(newShift);
-    } else {
-            if (!mockData[key]) mockData[key] = [];
-            mockData[key].push(newShift);
+    try {
+        await store.dispatch('addShift', newShift);
+        isRecuperationModalOpen.value = false;
+        showToast('success', `ניצול הבראה: ${days} ימים`);
+    } catch(e) {
+        showToast('error', 'שגיאה בשמירת נתונים');
     }
-    
-    isRecuperationModalOpen.value = false;
-    showToast('success', `ניצול הבראה: ${days} ימים`);
 };
 
 const pickRangeStart = async () => {
@@ -2075,7 +2313,7 @@ const pickRangeEnd = async () => {
     if (d) rangeEndDateStr.value = d;
 };
 
-const confirmDateRange = () => {
+const confirmDateRange = async () => {
     if (!rangeStartDateStr.value || !rangeEndDateStr.value) return;
     
     const [d1, m1, y1] = rangeStartDateStr.value.split('/').map(Number);
@@ -2092,6 +2330,11 @@ const confirmDateRange = () => {
     // Iterate
     const current = new Date(start);
     let count = 0;
+    
+    // We should probably fetch all shifts once to avoid redundant checks if we update store inside loop?
+    // Actually store updates optimistically.
+    // If using store.getters.allShifts inside loop, make sure it reflects added shifts if we await!
+    // If we await addShift, store updates, allShifts updates.
     
     while (current <= end) {
         const d = current.getDate().toString().padStart(2, '0');
@@ -2114,44 +2357,30 @@ const confirmDateRange = () => {
             extra: 0,
             deduction: 0,
             isVacation: true,
-            notes: tempPaymentType.value
+            notes: tempPaymentType.value,
+            date: current.toISOString()
         };
         
-        // Add to correct data list (handle cross-month)
-        const key = `${y}-${m}`;
-        
-        // Determine current view key
-        const viewY = currentDate.value.getFullYear();
-        const viewM = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
-        const viewKey = `${viewY}-${viewM}`;
-
-        // Get target list for overlap check
-        // If we are in the same month, use shifts.value (reactive) to ensure we check against latest added in this loop
-        let targetList = (key === viewKey) ? shifts.value : (mockData[key] || []);
-
-        // Check for overlaps with this specific day
-        const conflict = checkOverlap(newShift, -1, targetList, current);
+        // Overlap Check (fetch fresh list from store if awaiting?)
+        const allShifts = store.getters.allShifts;
+        const conflict = checkOverlap(newShift, -1, allShifts, current);
         if (conflict) {
              const conflictDesc = conflict.isVacation ? conflict.type : `${conflict.entry}-${conflict.exit}`;
              alert(`שגיאה: חפיפה בתאריך ${fullDate} עם משמרת קיימת (${conflictDesc}).\nלא ניתן להוסיף ${tempPaymentType.value}.`);
              return; 
         }
         
-        // Add to list
-        if (key === viewKey) {
-             shifts.value.push(newShift);
-             // Since shifts.value proxies the array in mockData, mockData is updated implicitly.
-        } else {
-             if (targetList.length === 0 && !mockData[key]) {
-                  mockData[key] = [];
-                  targetList = mockData[key];
-             }
-             targetList.push(newShift);
+        try {
+            await store.dispatch('addShift', newShift);
+            count++;
+        } catch(e) {
+             console.error(e);
+             alert('שגיאה בשמירה');
+             return;
         }
         
         // Next day
         current.setDate(current.getDate() + 1);
-        count++;
     }
     
     showToast('success', `נוספו ${count} רשומות של ${tempPaymentType.value}`);
@@ -2208,16 +2437,45 @@ const nextMonthLabel = computed(() => {
 });
 
 // Mock Data
-import { mockData } from '../services/mockData';
-import { mockShiftTypes } from '../services/mockShiftTypes';
-import { mockPaymentTypes } from '../services/mockPaymentTypes';
-import { mockSickTypes } from '../services/mockSickTypes';
-import { mockWeeklyPlans } from '../services/mockWeeklyPlans';
+// Data from Store
+// import { mockData } from '../services/mockData';
+// import { mockShiftTypes } from '../services/mockShiftTypes';
+// import { mockPaymentTypes } from '../services/mockPaymentTypes';
+// import { mockSickTypes } from '../services/mockSickTypes';
+// import { mockWeeklyPlans } from '../services/mockWeeklyPlans';
 
 // const mockData = { ... } (Removed local)
 
 
-const shifts = ref([]);
+const shifts = computed(() => {
+  const all = store.getters.allShifts;
+  const targetMonth = currentDate.value.getMonth();
+  const targetYear = currentDate.value.getFullYear();
+  return all.filter(s => {
+      if (!s.date) return false;
+      const d = new Date(s.date);
+      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+  });
+});
+
+const shiftTypes = computed(() => store.getters.allShiftTypes);
+const paymentTypes = computed(() => store.getters.allPaymentTypes);
+const sickTypes = computed(() => store.getters.allSickTypes);
+const weeklyPlans = computed(() => store.getters.allWeeklyPlans);
+
+// Helper to get defaults from Shift Type settings
+const getShiftDefaults = (typeName) => {
+    const type = shiftTypes.value.find(t => t.name === typeName);
+    if (!type) {
+        return { break: 0, extra: 0, deduction: 0 };
+    }
+    return {
+        break: type.break || 0,
+        extra: type.extra || 0,
+        deduction: type.deduction || 0
+    };
+};
+
 const isLoading = ref(false);
 const transitionName = ref('fade');
 
@@ -2226,8 +2484,10 @@ const totalHours = computed(() => {
   if (shifts.value.length === 0) return '0:00';
   let totalMinutes = 0;
   shifts.value.forEach(s => {
+      // Handle hours format if string 'HH:MM'
+    if (!s.hours || s.hours === '0:00') return;
     const [h, m] = s.hours.split(':').map(Number);
-    totalMinutes += h * 60 + m;
+    totalMinutes += (h || 0) * 60 + (m || 0);
   });
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
@@ -2236,25 +2496,17 @@ const totalHours = computed(() => {
 
 const totalSalary = computed(() => {
   if (shifts.value.length === 0) return '0.00';
-  const total = shifts.value.reduce((sum, s) => sum + parseFloat(s.salary), 0);
+  const total = shifts.value.reduce((sum, s) => sum + (parseFloat(s.salary) || 0), 0);
   return total.toFixed(2);
 });
 
-// Fetch Data
-const fetchShifts = (date) => {
-  return new Promise((resolve) => {
-      isLoading.value = true;
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const key = `${year}-${month}`;
-
-      // Simulate API delay
-      setTimeout(() => {
-        shifts.value = mockData[key] || [];
-        isLoading.value = false;
-        resolve();
-      }, 500); // 500ms delay
-  });
+// Fetch Data (Dummy wrapper for compatibility or trigger store fetch)
+const fetchShifts = async (date) => {
+    // In API mode, data is loaded via store.
+    // If we need to lazy load by month, we would dispatch here.
+    // For now, checks if data exists?
+    isLoading.value = true;
+    setTimeout(() => { isLoading.value = false; }, 300); // UI feedback
 };
 
 // Initial Fetch
@@ -2333,34 +2585,66 @@ const nextQuickMonth = () => {
     quickShiftDate.value = d;
 };
 
+// Return grid for Sun-Fri (6 days), excluding Saturday
 const quickShiftGrid = computed(() => {
     const y = quickShiftDate.value.getFullYear();
     const m = quickShiftDate.value.getMonth();
-    const firstDay = new Date(y, m, 1).getDay(); // 0=Sunday
     const daysInMonth = new Date(y, m + 1, 0).getDate();
     
     let days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    let firstAdded = false;
+
+    for (let i = 1; i <= daysInMonth; i++) {
+        const d = new Date(y, m, i);
+        const dayOfWeek = d.getDay(); // 0=Sun, 6=Sat
+
+        if (dayOfWeek === 6) continue; // Skip Saturday
+
+        if (!firstAdded) {
+            // Pad for the first visible day
+            // Mapping: 0->0, 1->1...
+            for (let p = 0; p < dayOfWeek; p++) {
+                days.push(null);
+            }
+            firstAdded = true;
+        }
+        
+        days.push({
+            label: i,
+            date: d,
+            inPlan: isDateInPlan(d),
+            isCurrentMonth: true
+        });
+    }
     return days;
 });
 
-const handleQuickDayClick = (day) => {
-    if (!day) return;
+const isDateInPlan = (dateObj) => {
+    if (!dateObj || !activeWeeklyPlan.value) return false;
+    
+    const d = dateObj instanceof Date ? new Date(dateObj) : new Date(quickShiftDate.value);
+    if (!(dateObj instanceof Date) && typeof dateObj === 'number') {
+         d.setDate(dateObj); // Fallback for legacy number calls if any remain
+    }
+    d.setHours(0,0,0,0);
+    
+    const start = new Date(activeWeeklyPlan.value.weekStart);
+    start.setHours(0,0,0,0);
+    const end = new Date(activeWeeklyPlan.value.weekEnd);
+    end.setHours(0,0,0,0);
+    
+    return d >= start && d <= end;
+};
+
+const handleQuickDayClick = async (dayItem) => {
+    if (!dayItem || !dayItem.date) return;
     
     // Create Quick Shift for this date
-    const d = new Date(quickShiftDate.value);
-    d.setDate(day);
-    
-    const h = "08"; // Default Start? Or current time? "Quick Shift" usually implies template.
-    // Let's assume default 8 hours? Or just empty?
-    // User wants "Quick Shift". Let's use the parameters from Image 2? 
-    // Image 2 is just the modal. 
-    // Let's create a basic shift entry.
+    const d = new Date(dayItem.date);
     
     const m = (d.getMonth() + 1).toString().padStart(2, '0');
     const y = d.getFullYear();
-    const dayStr = day.toString();
+    const dayStr = d.getDate().toString();
 
     const dayNameInPlan = ['יום א', 'יום ב', 'יום ג', 'יום ד', 'יום ה', 'יום ו', 'שבת'][d.getDay()];
     const dayNameFull = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][d.getDay()];
@@ -2378,13 +2662,14 @@ const handleQuickDayClick = (day) => {
         dayName: dayNameFull,
         entry: planShift.entry,
         exit: planShift.exit,
-        hours: (planShift.entry !== '--:--' && planShift.exit !== '--:--') ? '' : '0:00', // calculateShiftData will fill this
-        salary: '0.00',
+        hours: (planShift.entry !== '--:--' && planShift.exit !== '--:--') ? '' : '0:00', 
+        salary: '0.00', // recalculated below
         type: planShift.shiftName,
-        fullDate: `${day.toString().padStart(2,'0')}/${m}/${y}`,
+        fullDate: `${d.getDate().toString().padStart(2,'0')}/${m}/${y}`,
         break: 0,
         extra: 0,
-        deduction: 0
+        deduction: 0,
+        date: d.toISOString()
     };
 
     // Calculate hours/salary
@@ -2393,34 +2678,21 @@ const handleQuickDayClick = (day) => {
     newShift.salary = salaryStr;
 
     // Check Overlap
-    const key = `${y}-${m}`;
-    const targetList = mockData[key] || [];
-    if (checkOverlap(newShift, -1, targetList, quickShiftDate.value)) {
+    const allShifts = store.getters.allShifts;
+    if (checkOverlap(newShift, -1, allShifts, d)) { // checkOverlap expects normalized shift?
          showToast('error', 'שגיאה: המשמרת חופפת למשמרת קיימת');
          return;
     }
     
-    // Add to mockData if it's not the currently viewed list (shifts.value references mockData[viewed], so if we are viewing other month, we need to push to mockData directly)
-    // Actually shifts.value IS mockData[currentKey]. 
-    // If targetList is shifts.value (same month), we push to shifts.value (reactive).
-    // If targetList is different, we push to it.
-    
-    if (targetList === shifts.value) {
-        shifts.value.push(newShift);
-    } else {
-        targetList.push(newShift);
-        // If target list didn't exist in mockData, we should set it but mockData is const reference to object.
-        if (!mockData[key]) mockData[key] = targetList;
+    try {
+        await store.dispatch('addShift', newShift);
+        showToast('success', 'המשמרת נוספה בהצלחה!');
+        setTimeout(() => {
+           isQuickShiftModalOpen.value = false;
+        }, 800);
+    } catch (e) {
+        showToast('error', 'שגיאה בשמירה');
     }
-    
-    // Show Success Toast
-    showToast('success', 'המשמרת נוספה בהצלחה!');
-    
-    // Close modal after short delay? user said "once done indicate date added". 
-    // Maybe keep modal open? Or close? Let's close after confirmation.
-    setTimeout(() => {
-       isQuickShiftModalOpen.value = false;
-    }, 1500);
 };
 
 // Long Press Logic
@@ -2434,7 +2706,12 @@ const startPress = (day) => {
     isLongPressHandled.value = false;
     
     pressTimer = setTimeout(() => {
-        handleQuickDayClick(day);
+        // user requirement: "long press ... add ALL lines of the period"
+        if (activeWeeklyPlan.value) {
+            addAllShiftsFromPlan(activeWeeklyPlan.value);
+        } else {
+            handleQuickDayClick(day); // Fallback if no plan selected (should be blocked by UI but just in case)
+        }
         isLongPressHandled.value = true;
         pressingDay.value = null; // visual feedback end
     }, 1000); // 1 second
@@ -2456,6 +2733,88 @@ const cancelPress = () => {
     if (pressTimer) clearTimeout(pressTimer);
     pressingDay.value = null;
     isLongPressHandled.value = false;
+};
+
+const addAllShiftsFromPlan = async (plan) => {
+    let addedCount = 0;
+    let conflictCount = 0;
+    const planStart = new Date(plan.weekStart);
+    
+    // We assume plan.days is ordered Sunday to Saturday (0 to 6)
+    for (let i = 0; i < 7; i++) {
+        const dayPlan = plan.days[i];
+        if (!dayPlan || !dayPlan.isActive) continue;
+
+        const targetDate = new Date(planStart);
+        targetDate.setDate(targetDate.getDate() + i);
+        
+        // Skip Saturday check just in case, though is Day 6
+        if (targetDate.getDay() === 6) continue;
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        targetDate.setHours(0,0,0,0);
+        
+        // Prepare Shift Data
+        const dStr = targetDate.getDate().toString().padStart(2, '0');
+        const mStr = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+        const y = targetDate.getFullYear();
+        const fullDate = `${dStr}/${mStr}/${y}`;
+        
+        // Construct Shift TEMPLATE for overlap check
+        const entry = dayPlan.entry;
+        const exit = dayPlan.exit;
+        
+        const [eH, eM] = entry.split(':').map(Number);
+        const [xH, xM] = exit.split(':').map(Number);
+        let duration = 0;
+        if (!isNaN(eH) && !isNaN(xH)) {
+             let startMin = eH * 60 + eM;
+             let endMin = xH * 60 + xM;
+             if (endMin < startMin) endMin += 24 * 60;
+             duration = (endMin - startMin) / 60;
+        }
+        const hoursStr = isNaN(duration) ? '0:00' : `${Math.floor(duration).toString().padStart(2,'0')}:${Math.round((duration % 1) * 60).toString().padStart(2,'0')}`;
+        const salaryStr = (duration * 45).toFixed(2); 
+
+        const newShift = {
+            dayNumber: dStr,
+            dayName: dayPlan.dayName,
+            fullDate: fullDate,
+            type: dayPlan.shiftName,
+            entry: entry,
+            exit: exit,
+            hours: hoursStr,
+            salary: salaryStr,
+            break: 0,
+            extra: 0,
+            deduction: 0,
+            notes: '',
+            date: targetDate.toISOString()
+        };
+
+        // Check Overlap
+        const allShifts = store.getters.allShifts;
+        if (checkOverlap(newShift, -1, allShifts, targetDate)) {
+            conflictCount++;
+            continue;
+        }
+
+        // Add
+        try {
+            await store.dispatch('addShift', newShift);
+            addedCount++;
+        } catch (e) {
+            console.error('Error adding shift from plan', e);
+        }
+    }
+
+    if (addedCount > 0) {
+        showToast('success', `נוספו ${addedCount} משמרות${conflictCount ? ` (דולגו ${conflictCount} חפיפות)` : ''}`);
+        isQuickShiftModalOpen.value = false;
+    } else {
+         showToast('info', conflictCount > 0 ? 'לא נוספו משמרות (נמצאו חפיפות)' : 'לא נוספו משמרות');
+    }
 };
 
 // Toast Logic
@@ -2499,9 +2858,12 @@ const handleFabItemClick = (item) => {
         editingShift.type = 'בוקר';
         editingShift.entry = '--:--';
         editingShift.exit = '--:--';
-        editingShift.break = 0;
-        editingShift.extra = 0;
-        editingShift.deduction = 0;
+        
+        const defaults = getShiftDefaults('בוקר');
+        editingShift.break = defaults.break;
+        editingShift.extra = defaults.extra;
+        editingShift.deduction = defaults.deduction;
+        
         editingShift.notes = '';
         
         isDetailModalOpen.value = true;
@@ -2563,43 +2925,76 @@ const closeQuickShiftModal = () => {
   justify-content: center;
 }
 
-/* Header Title */
-.header-title-area {
+/* Header Title replaced by Nav */
+.header-date-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    direction: ltr; /* Arrows Logic */
+}
+
+.header-date-text {
     font-size: 1.1rem;
-    font-weight: 500;
+    font-weight: 700;
+}
+
+.nav-arrow {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 5px;
+}
+
+.nav-arrow:hover {
     color: white;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+}
+
+.header-right-spacer {
+    width: 24px;
+    display: flex;
+    justify-content: center;
+}
+.mini-timer {
+    font-size: 0.8rem; 
     white-space: nowrap;
 }
 
-/* Month Selector */
+/* Page Title Bar */
+.page-title-bar {
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4DB6CD; /* Blue/Teal text */
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.title-icon {
+    background-color: #5C6BC0; /* Indigo/Purple Icon Background */
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.title-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Month Selector - Removed visually but keeping class placeholder if needed for JS ref (which shouldn't be valid anymore) */
 .month-selector {
-  background-color: #0093AB;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 16px 20px 16px;
-  font-size: 0.9rem;
-  overflow: hidden;
-  flex-direction: row-reverse; /* Keep visual order matching image (Prev Left) */
-  cursor: grab;
-}
-
-.month-selector:active {
-  cursor: grabbing;
-}
-
-.current-month {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.month-side {
-  opacity: 0.5;
-  white-space: nowrap;
+  display: none; 
 }
 
 /* Table Header */
@@ -2804,10 +3199,24 @@ const closeQuickShiftModal = () => {
 }
 
 /* FAB */
-.fab {
+/* FAB Wrapper */
+.fab-wrapper {
   position: absolute;
-  bottom: 140px; /* Above summary */
-  left: 20px; /* RTL means left is start? No, left is physically left. Image shows FAB on Left. */
+  bottom: 120px; /* Adjusted to accommodate label and keep button position */
+  left: 20px;
+  z-index: 1002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.fab {
+  /* Position handled by wrapper now */
+  position: relative;
+  bottom: auto;
+  left: auto;
+  
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -2820,8 +3229,18 @@ const closeQuickShiftModal = () => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 1002; /* Higher than menu items if we want it on top, or lower... Image shows items above. */
   transition: all 0.3s ease;
+}
+
+.fab-label {
+  color: #555;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+
+.fab-label.fade-out-label {
+  opacity: 0.5;
 }
 
 .fab.delete-mode {
@@ -2843,6 +3262,11 @@ const closeQuickShiftModal = () => {
   height: 100vh;
   background-color: rgba(0, 0, 0, 0.05); /* Almost transparent to keep data visible */
   z-index: 1000;
+}
+
+.red-text {
+    color: red !important;
+    font-weight: bold;
 }
 
 .fab-menu {

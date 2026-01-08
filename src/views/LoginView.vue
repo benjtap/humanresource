@@ -38,13 +38,20 @@
 
         <button type="submit" class="btn-primary" :disabled="isLoading">
           <span v-if="isLoading" class="loader"></span>
-          <span v-else>Vérifier</span>
+          <span v-else>Continuer</span>
         </button>
         
-        <!-- Mock/Demo Login Button -->
-        <button type="button" class="btn-secondary-action" @click="bypassLogin" style="margin-top: 10px;">
-          Connexion Démo (Mock)
-        </button>
+        <div class="mode-toggle-container">
+            <label class="toggle-switch">
+                <input type="checkbox" :checked="isMockMode" @change="toggleMode">
+                <span class="slider round"></span>
+            </label>
+            <span class="mode-label">{{ isMockMode ? 'Mode Données Test (Mock)' : 'Mode API (MongoDB)' }}</span>
+        </div>
+        
+        <div style="text-align: center; margin-top: 10px;">
+             <a href="#" @click.prevent="fillMockData" style="color: #666; font-size: 0.8rem;">Remplir Données Test (050...)</a>
+        </div>
       </form>
     </div>
 
@@ -72,6 +79,7 @@
 
             <div class="modal-actions">
               <button type="button" @click="showOtpModal = false" class="btn-secondary">Annuler</button>
+              <button type="button" @click="simulateSmsReceived" class="btn-secondary" style="font-size: 0.8rem;">Simuler SMS (Dev)</button>
               <button type="submit" class="btn-primary">Confirmer</button>
             </div>
           </form>
@@ -82,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import api from '../services/api'
@@ -100,75 +108,97 @@ const form = reactive({
   phoneNumber: ''
 })
 
+const isMockMode = computed(() => store.getters.isMockMode);
+
+const toggleMode = () => {
+    store.commit('TOGGLE_MOCK_MODE');
+};
+
 const handleIdentityCheck = async () => {
   isLoading.value = true
-  try {
-    // 1. Essayer Inscription
-    const payload = {
-      Username: form.idNumber,
-      Telephone: form.phoneNumber
-    }
-    
-    // Note: Endpoint paths case sensitive? Typically lowercase in URL. Controller is "Auth".
-    // Using /api/Auth/inscription
-    const response = await api.post('/Auth/inscription', payload)
-    
-    if (response.data.succes) {
-        authContext.value = 'inscription'
-        showOtpModal.value = true
-        return
-    }
+  
+  if (isMockMode.value) {
+      // Direct Mock Login
+      setTimeout(() => {
+          bypassLogin();
+          isLoading.value = false;
+      }, 500);
+      return;
+  }
 
-    // Si pas succès, vérifier si c'est parce que l'utilisateur existe
-    // Le message peut varier, on regarde si ça contient des mots clés ou si succes est false tout simplement
-    // Si l'utilisateur existe, on tente une connexion
-    
-    console.log("Inscription failed, trying login...", response.data.message)
-    await tryLoginFlow()
+  try {
+    // 1. Tenter la Connexion d'abord (Cas le plus fréquent + Login direct si vérifié)
+    const response = await api.post('/Auth/connexion/demander', { 
+        Username: form.idNumber 
+    })
+
+    if (response.data.succes) {
+         // CAS: Utilisateur vérifié (Login direct)
+         const data = response.data.data
+         if (data && (data.token || data.Token)) {
+            const token = data.token || data.Token
+            store.dispatch('saveToken', token)
+            store.commit('SET_USER', data.utilisateur || data.Utilisateur)
+            router.push({ name: 'shifts' })
+            return
+         }
+         
+         // CAS: Utilisateur existe mais nécessite OTP de connexion ?
+         // Note: Avec la modif backend, ce cas n'arrive plus si verifié=true (token) ou false (erreur).
+         // Mais on garde pour robustesse si backend change.
+         authContext.value = 'connexion'
+         showOtpModal.value = true
+
+    } else {
+         // ECHEC CONNEXION
+         const msg = response.data.message || ''
+         
+         if (msg.toLowerCase().includes('introuvable')) {
+             // 2. Utilisateur inconnu -> Inscription
+             await doInscription()
+         } else if (msg.toLowerCase().includes('vérifier votre téléphone')) {
+             // 3. Utilisateur existe mais non vérifié -> Renvoyer code Inscription
+             await resendInscriptionCode()
+         } else {
+             // Autre erreur
+             alert(msg)
+         }
+    }
 
   } catch (error) {
     console.error('Identity check failed:', error)
-    // Si 400 (Bad Request), peut-être validation échouée ou utilisateur existe (selon implémentation)
-    // On essaie le login flow en fallback si l'erreur n'est pas critique
-    
-    // Si c'est une vraie erreur réseau ou autre, on alerte
+    // Fallback: Si erreur réseau ou 400 bizarre, on essaie inscription si on a pas de meilleur indice, 
+    // mais "Introuvable" est généralement géré dans le bloc 'else' du success false.
     if (error.response && error.response.status === 400) {
-         // Si c'est "déjà utilisé", on tente le login
-         // Malheureusement le message est dans response.data.message
-         if (error.response.data && !error.response.data.succes) {
-            await tryLoginFlow()
-            return
+         // Si l'API retourne 400 pour "User not found" au lieu de 200 {succes:false}
+         if (error.response.data && error.response.data.message && error.response.data.message.includes('introuvable')) {
+             await doInscription()
+             return
          }
     }
-    
-    alert('Erreur: ' + (error.response?.data?.message || 'Vérifiez vos informations.'))
+    alert('Erreur: ' + (error.response?.data?.message || 'Une erreur est survenue.'))
   } finally {
     isLoading.value = false
   }
 }
 
-const tryLoginFlow = async () => {
-    // Tentative de connexion (Demande OTP)
+const doInscription = async () => {
     try {
-        const response = await api.post('/Auth/connexion/demander', { 
-            Username: form.idNumber 
-        })
+        const payload = {
+            Username: form.idNumber,
+            Telephone: form.phoneNumber
+        }
+        const response = await api.post('/Auth/inscription', payload)
         
         if (response.data.succes) {
-            authContext.value = 'connexion'
+            authContext.value = 'inscription'
             showOtpModal.value = true
         } else {
-            // Echec aussi du login (ex: compte inactif, ou tel non vérifié qui nécessite inscription code resend)
-            if (response.data.message.includes("vérifier votre téléphone")) {
-                // Cas spécial: existe mais pas vérifié. On doit renvoyer le code inscription
-                await resendInscriptionCode()
-            } else {
-                alert(response.data.message || 'Compte introuvable.')
-            }
+            alert(response.data.message || "Erreur lors de l'inscription")
         }
     } catch (e) {
-         console.error("Login attempt failed", e)
-         alert("Erreur lors de la connexion.")
+        console.error("Inscription failed", e)
+        alert("Erreur lors de la création du compte.")
     }
 }
 
@@ -178,9 +208,9 @@ const resendInscriptionCode = async () => {
             Username: form.idNumber 
         })
         if (response.data.succes) {
-            authContext.value = 'inscription' // On retourne en mode inscription pour la vérif
+            authContext.value = 'inscription' 
             showOtpModal.value = true
-            alert("Un nouveau code d'inscription a été envoyé.")
+            // alert("Un message a été envoyé.") // Optionnel
         } else {
             alert(response.data.message)
         }
@@ -251,6 +281,15 @@ const bypassLogin = () => {
     store.commit('SET_USER', fakeUser);
     
     router.push({ name: 'shifts' });
+};
+
+const fillMockData = () => {
+    form.idNumber = '111111111';
+    form.phoneNumber = '0500000000';
+};
+
+const simulateSmsReceived = () => {
+    verificationCode.value = '123456';
 };
 </script>
 
@@ -470,5 +509,76 @@ input:focus {
   background: rgba(0,0,0,0.05);
   color: var(--text-main);
   border-color: var(--text-muted);
+}
+.btn-secondary-action:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+.mode-toggle-container {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.mode-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }
 </style>

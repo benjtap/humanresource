@@ -12,11 +12,11 @@
 
     <!-- Week Selector Bar -->
     <div class="week-selector">
-        <button class="arrow-btn" @click="nextWeek">
+        <button class="arrow-btn" @click="nextWeek" v-if="showNavigation">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </button>
         <div class="current-week-label">{{ weekRangeLabel }}</div>
-        <button class="arrow-btn" @click="prevWeek">
+        <button class="arrow-btn" @click="prevWeek" v-if="showNavigation">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
     </div>
@@ -105,11 +105,25 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { mockWeeklyPlans } from '../services/mockWeeklyPlans';
-import { mockShiftTypes } from '../services/mockShiftTypes';
+import { useStore } from 'vuex';
+
+const props = defineProps({
+    planId: String,
+    mode: String,
+    isModal: {
+        type: Boolean,
+        default: false
+    }
+});
+
+const emit = defineEmits(['close']);
 
 const router = useRouter();
 const route = useRoute();
+const store = useStore();
+
+const allPlans = computed(() => store.getters.allWeeklyPlans);
+const allShiftTypes = computed(() => store.getters.allShiftTypes);
 
 // State
 const currentWeekStart = ref(new Date());
@@ -131,12 +145,13 @@ const dayNames = ['יום א', 'יום ב', 'יום ג', 'יום ד', 'יום ה
 const currentPlan = ref([]);
 
 onMounted(() => {
-    const id = route.query.id;
-    const mode = route.query.mode;
+    // Prioritize props for Modal usage needed by parent
+    const id = props.planId || route.query.id;
+    const mode = props.mode || route.query.mode;
 
     if (id) {
         currentPlanId.value = id;
-        const found = mockWeeklyPlans.find(p => p.id === id);
+        const found = allPlans.value.find(p => p.id === id);
         if (found) {
             currentWeekStart.value = new Date(found.weekStart);
             currentPlan.value = JSON.parse(JSON.stringify(found.days));
@@ -154,7 +169,7 @@ const generateTemplate = () => {
     currentPlan.value = dayNames.map(name => {
         const isShabbat = name === 'שבת';
         const shiftName = name === 'יום ו' ? 'יום ו' : 'בוקר';
-        const type = mockShiftTypes.find(t => t.name === shiftName);
+        const type = allShiftTypes.value.find(t => t.name === shiftName);
 
         return {
             dayName: name,
@@ -169,23 +184,52 @@ const generateTemplate = () => {
 const weekRangeLabel = computed(() => {
     const start = new Date(currentWeekStart.value);
     const end = new Date(start);
-    end.setDate(end.getDate() + 6);
+    end.setDate(end.getDate() + 5); 
     const format = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
     return `${format(start)} - ${format(end)}`;
 });
 
+const showNavigation = computed(() => {
+    const m = props.mode || route.query.mode;
+    return m === 'new';
+});
+
+const loadPlanForWeek = (date) => {
+    // Reset time to compare dates only
+    const d = new Date(date);
+    d.setHours(0,0,0,0);
+    
+    // Find plan starting on this date
+    // We compare weekStart timestamps
+    const found = allPlans.value.find(p => {
+        const pDate = new Date(p.weekStart);
+        pDate.setHours(0,0,0,0);
+        return pDate.getTime() === d.getTime();
+    });
+
+    if (found) {
+        currentPlanId.value = found.id;
+        currentWeekStart.value = new Date(found.weekStart);
+        currentPlan.value = JSON.parse(JSON.stringify(found.days));
+        isNewMode.value = false;
+    } else {
+        currentPlanId.value = null;
+        isNewMode.value = true;
+        currentWeekStart.value = d;
+        generateTemplate();
+    }
+};
+
 const prevWeek = () => {
     const d = new Date(currentWeekStart.value);
     d.setDate(d.getDate() - 7);
-    currentWeekStart.value = d;
-    generateTemplate(); 
+    loadPlanForWeek(d);
 };
 
 const nextWeek = () => {
     const d = new Date(currentWeekStart.value);
     d.setDate(d.getDate() + 7);
-    currentWeekStart.value = d;
-    generateTemplate();
+    loadPlanForWeek(d);
 };
 
 const validateTimes = (index) => {
@@ -203,7 +247,7 @@ const selectShift = (name) => {
         day.shiftName = name;
         day.isActive = true;
 
-        const type = mockShiftTypes.find(t => t.name === name);
+        const type = allShiftTypes.value.find(t => t.name === name);
         if (type) {
              day.entry = type.entry;
              day.exit = type.exit;
@@ -216,11 +260,11 @@ const selectShift = (name) => {
 const checkOverlap = () => {
     const newStart = new Date(currentWeekStart.value);
     const newEnd = new Date(newStart);
-    newEnd.setDate(newEnd.getDate() + 6);
+    newEnd.setDate(newEnd.getDate() + 5);
     newStart.setHours(0,0,0,0);
     newEnd.setHours(23,59,59,999);
 
-    for (const plan of mockWeeklyPlans) {
+    for (const plan of allPlans.value) {
         if (currentPlanId.value && plan.id === currentPlanId.value) continue;
         const existingStart = new Date(plan.weekStart);
         const existingEnd = new Date(plan.weekEnd);
@@ -235,32 +279,41 @@ const checkOverlap = () => {
     return true;
 };
 
-const savePlan = () => {
+const savePlan = async () => {
     if (!checkOverlap()) return;
     
     const start = new Date(currentWeekStart.value);
     const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    const format = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+    end.setDate(end.getDate() + 5); 
+    const format = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}`;
     const label = `${format(start)} - ${format(end)}`;
 
     const newEntry = {
-        id: currentPlanId.value || `plan-${Date.now()}`,
+        id: currentPlanId.value, // let backend generate if null? or store handles it? 
+        // If creating new, id is null. Store action handles it.
+        // If update, id is set.
         weekStart: currentWeekStart.value.toISOString(),
         weekEnd: end.toISOString(),
         label: label,
         days: JSON.parse(JSON.stringify(currentPlan.value))
     };
 
-    if (currentPlanId.value) {
-        const index = mockWeeklyPlans.findIndex(p => p.id === currentPlanId.value);
-        if (index !== -1) mockWeeklyPlans[index] = newEntry;
-    } else {
-        mockWeeklyPlans.push(newEntry);
+    try {
+        if (currentPlanId.value) {
+             await store.dispatch('updateWeeklyPlan', newEntry);
+        } else {
+             await store.dispatch('addWeeklyPlan', newEntry);
+        }
+    
+        if (props.isModal) {
+            emit('close');
+        } else {
+            router.back();
+        }
+    } catch (e) {
+        console.error(e);
+        alert('שגיאה בשמירת סידור עבודה');
     }
-
-    alert('הסידור נשמר בהצלחה!');
-    router.back();
 };
 
 const sharePlan = () => {
@@ -268,10 +321,20 @@ const sharePlan = () => {
 };
 
 const resetPlan = () => {
-    router.back();
+    if (props.isModal) {
+        emit('close');
+    } else {
+        router.back();
+    }
 };
 
-const goBack = () => router.back();
+const goBack = () => {
+    if (props.isModal) {
+        emit('close');
+    } else {
+        router.back();
+    }
+};
 </script>
 
 <style scoped>
@@ -280,7 +343,7 @@ const goBack = () => router.back();
 .weekly-plan-page {
   font-family: 'Heebo', sans-serif;
   background-color: #f7f7f7;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   color: #333;

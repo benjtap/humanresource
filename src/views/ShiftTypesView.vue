@@ -1,14 +1,23 @@
 <template>
   <div class="shift-types-page">
     <!-- Header -->
-    <header class="app-header">
-        <button class="icon-btn back-btn" @click="$router.back()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </button>
-        <div class="header-title">סוגי משמרות</div>
-        <div class="header-spacer"></div>
+    <!-- Header -->
+    <header class="header">
+      <button class="icon-btn" @click.stop="isMenuOpen = true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      
+      <div class="header-title-area">
+          <span>סוג משמרות</span>
+      </div>
+
+      <!-- Right spacer for balance (or notification icon if needed, using empty for now or same icon as others) -->
+      <button class="icon-btn" style="visibility: visible;"> <!-- Visibile per request if icon needed, otherwise hidden -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
     </header>
 
+    <!-- Main Content -->
     <!-- Main Content -->
     <div class="content-container">
         
@@ -18,23 +27,16 @@
             <p class="info-text">
                 כאן ניתן להגדיר מספר בלתי מוגבל של כל סוגי המשמרות שתרצו,
                 כגון משמרת בוקר, לילה, צהריים, מוצש, ועוד.
-            </p>
-            <p class="info-text">
                 כדי לשנות את ההגדרות של המשמרת יש לבחור אותה מהרשימה.
             </p>
         </div>
 
-        <div class="separator-line"></div>
-
         <!-- Shift List -->
         <div class="shift-list">
-            <div v-for="type in shiftTypes" :key="type.id" class="shift-item" @click="editShiftType(type)">
+            <div v-for="(type, index) in shiftTypes" :key="type.id" class="shift-item" @click="editShiftType(type)">
                 <span class="shift-name-text">{{ type.name }}</span>
-                <button v-if="type.name !== 'בוקר'" class="delete-shift-btn" @click.stop="deleteShiftType(type)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5252" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                </button>
             </div>
-             <!-- Empty placeholder rows to fill separation lines if needed visually, but list is enough -->
+             <!-- Add empty rows for visual if few items? No, list is dynamic. -->
         </div>
 
     </div>
@@ -80,6 +82,43 @@
                         </div>
                         <span class="red-label">יציאה:</span>
                     </div>
+                </div>
+
+                <!-- Rates Section (Normal Hours) -->
+                <div class="rates-section" style="margin-top: 20px; text-align: right;">
+                     <label class="section-label" style="font-weight: 500; color: #444; display: block; margin-bottom: 10px;">תעריפים ושעות:</label>
+                     
+                     <div v-for="(rate, index) in rates" :key="index" class="rate-item-row" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                        <!-- Limit (Time) -->
+                        <div class="time-box-small" @click="openTimePicker('rate', index)" style="background: white; border: 1px solid #ccc; border-radius: 4px; padding: 0 10px; height: 38px; width: 80px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                             <input type="text" :value="rate.limit" class="time-input-native" readonly style="border: none; background: transparent; width: 100%; text-align: center; font-size: 1rem; color: #333; font-family: inherit; cursor: pointer;">
+                        </div>
+                        
+                        <!-- Percentage -->
+                        <div class="percentage-box-wrapper" style="position: relative; width: 80px; height: 38px;">
+                             <input type="number" v-model="rate.value" class="percentage-input" style="width: 100%; height: 100%; padding: 0 10px; border: 1px solid #ccc; border-radius: 4px; background: white; text-align: center; font-size: 1rem; color: #333;">
+                             <span class="percent-sign" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #888; font-size: 0.8rem;">%</span>
+                        </div>
+
+                        <!-- Actions (Edit/Delete) -->
+                         <div class="rate-actions" style="display: flex; gap: 5px;">
+                             <!-- Edit (Trigger Time Picker) -->
+                             <button class="action-icon-btn edit" @click="openTimePicker('rate', index)" style="background: none; border: none; cursor: pointer; color: #999; padding: 5px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                             </button>
+
+                             <!-- Delete -->
+                             <button class="action-icon-btn delete" @click="removeRate(index)" style="background: none; border: none; cursor: pointer; color: #999; padding: 5px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                             </button>
+                         </div>
+                     </div>
+
+                     <!-- Add Rate Button -->
+                     <button class="add-rate-btn" @click="addRate" style="width: 100%; padding: 10px; background: white; border: 1px solid #eee; color: #666; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; transition: all 0.2s; margin-top: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        הוסף תעריף נוסף
+                     </button>
                 </div>
 
                 <!-- Rate Inputs -->
@@ -252,15 +291,111 @@
         </div>
     </div>
     
+
+     <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" v-if="isMenuOpen" @click="isMenuOpen = false"></div>
+
+    <!-- Sidebar Menu -->
+    <aside class="sidebar" :class="{ open: isMenuOpen }">
+      <!-- Sidebar Header -->
+      <div class="sidebar-header">
+        <div class="header-bg-decor"></div>
+        <div class="sidebar-top-row">
+          <span class="account-name">חשבון: עבודה 1</span>
+        </div>
+        <div class="sidebar-bottom-row">
+          <div class="menu-label-group">
+            <button class="icon-btn" @click="isMenuOpen = false">
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <span class="menu-text">תפריט</span>
+          </div>
+          <div class="user-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#ccc" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menu Items -->
+      <div class="menu-items">
+        <router-link to="/shifts" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          </span>
+          <span>משמרות</span>
+        </router-link>
+        <router-link to="/summary" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </span>
+          <span>פירוט שכר</span>
+        </router-link>
+        <router-link to="/weekly-schedules" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          </span>
+          <span>סידור עבודה</span>
+        </router-link>
+        <router-link to="/shift-types" class="menu-item active-menu-item" @click="isMenuOpen = false"> <!-- Active here -->
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </span>
+          <span>הגדרת סוג משמרת</span>
+        </router-link>
+        <router-link to="/settings" class="menu-item" @click="isMenuOpen = false">
+          <span class="item-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          </span>
+          <span>הגדרות</span>
+        </router-link>
+        <div class="spacer-small"></div>
+        <a href="#" class="menu-item">
+          <span class="item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </span>
+          <span>דוח אקסל</span>
+        </a>
+        <div class="spacer-small"></div>
+        
+        <a href="#" class="menu-item" @click.prevent="logout">
+           <span class="item-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+           </span>
+           <span>יציאה</span>
+        </a>
+      </div>
+
+      <div class="sidebar-footer"></div>
+    </aside>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          <span>סוג משמרות</span>
+        </button>
+    </nav>
+    
   </div>
 </template>
 
 <script setup>
 import { ref, computed, nextTick } from 'vue';
+
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 
 const store = useStore();
+const router = useRouter(); // For logout redirect
 const shiftTypes = computed(() => store.getters.allShiftTypes); // Reactive from store
+
+const isMenuOpen = ref(false);
+
+const logout = () => {
+    store.dispatch('saveToken', null);
+    store.commit('SET_USER', null);
+    router.push({ name: 'login' });
+};
 
 const isModalOpen = ref(false);
 const shiftName = ref('');
@@ -277,19 +412,7 @@ const deductionAmount = ref(0);
 // Jump to logic section
 // ...
 const editingTypeId = ref(null);
-
-const editShiftType = (type) => {
-    editingTypeId.value = type.id;
-    shiftName.value = type.name;
-    // Assuming mock data might hold these, or fallback
-    defaultEntry.value = type.entry || '07:00';
-    defaultExit.value = type.exit || '16:15';
-    breakTime.value = type.break || 0;
-    extraAmount.value = type.extra || 0;
-    deductionAmount.value = type.deduction || 0;
-    
-    isModalOpen.value = true;
-};
+const rates = ref([]);
 
 const deleteShiftType = (type) => {
     if (type.name === 'בוקר') {
@@ -301,9 +424,28 @@ const deleteShiftType = (type) => {
     }
 };
 
+const editingNumericId = ref(null);
+
+const editShiftType = (type) => {
+    editingTypeId.value = type.id;
+    editingNumericId.value = type.numericId;
+    shiftName.value = type.name;
+    shiftColor.value = type.color || '#FFFFFF';
+    defaultEntry.value = type.entry || '07:00';
+    defaultExit.value = type.exit || '16:15';
+    breakTime.value = type.break || 0;
+    extraAmount.value = type.extra || 0;
+    deductionAmount.value = type.deduction || 0;
+    rates.value = (type.rates && type.rates.length) 
+        ? JSON.parse(JSON.stringify(type.rates)) 
+        : [{ limit: '08:00', value: 100 }];
+    
+    isModalOpen.value = true;
+};
+
 const createNewShiftType = () => {
     editingTypeId.value = null;
-    // Reset defaults
+    editingNumericId.value = null;
     shiftName.value = '';
     shiftColor.value = '#FFFFFF';
     defaultEntry.value = '07:00';
@@ -311,6 +453,7 @@ const createNewShiftType = () => {
     breakTime.value = 0;
     extraAmount.value = 0;
     deductionAmount.value = 0;
+    rates.value = [{ limit: '08:00', value: 100 }];
     isModalOpen.value = true;
 };
 
@@ -320,29 +463,99 @@ const saveNewShiftType = () => {
         return;
     }
 
+    // Determine Numeric ID
+    let numId = editingNumericId.value;
+    if (!numId) {
+        const ids = shiftTypes.value.map(t => t.numericId || 0);
+        numId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+    }
+
     const data = {
         name: shiftName.value,
+        numericId: numId,
+        color: shiftColor.value,
         entry: defaultEntry.value,
         exit: defaultExit.value,
-        break: breakTime.value,
-        extra: extraAmount.value,
-        deduction: deductionAmount.value
+        break: Number(breakTime.value) || 0,
+        extra: Number(extraAmount.value) || 0,
+        deduction: Number(deductionAmount.value) || 0,
+        rates: rates.value
     };
 
     if (editingTypeId.value) {
-        // Update
         store.dispatch('updateShiftType', { id: editingTypeId.value, ...data });
     } else {
-        // Create
-        const newId = Math.max(0, ...shiftTypes.value.map(t => t.id)) + 1;
-        store.dispatch('addShiftType', { id: newId, ...data });
+        store.dispatch('addShiftType', data); // ID auto-generated by backend for new
     }
 
     isModalOpen.value = false;
 };
 
+const addRate = () => {
+    let nextValue = 125;
+    if (rates.value.length > 0) {
+        const lastVal = parseInt(rates.value[rates.value.length - 1].value);
+        if (lastVal === 100) nextValue = 125;
+        else if (lastVal === 125) nextValue = 150;
+        else if (lastVal === 150) nextValue = 175; // or 200 depending on generic law, usually jumps by 25 or to 200
+        else nextValue = lastVal + 25;
+    }
+    rates.value.push({ limit: '02:00', value: nextValue });
+};
+
+const removeRate = (index) => {
+    rates.value.splice(index, 1);
+};
+
 const closeModal = () => {
     isModalOpen.value = false;
+};
+
+// ... Break/Extra/Deduction logic remains same ...
+
+// Time Picker State
+const isTimePickerOpen = ref(false);
+const pickerTarget = ref(null); 
+const pickerTitle = ref('');
+const tempHour = ref('00');
+const tempMinute = ref('00');
+const pickerRateIndex = ref(null); // For rate row being edited
+
+// ... Computed neighbors ...
+
+const openTimePicker = (target, index = null) => {
+    pickerTarget.value = target;
+    pickerRateIndex.value = index;
+    
+    let timeStr = '00:00';
+    if (target === 'entry') {
+        pickerTitle.value = 'זמן כניסה';
+        timeStr = defaultEntry.value;
+    } else if (target === 'exit') {
+        pickerTitle.value = 'זמן יציאה';
+        timeStr = defaultExit.value;
+    } else if (target === 'rate') {
+        pickerTitle.value = 'משך שעות';
+        timeStr = rates.value[index].limit;
+    }
+
+    const [h, m] = timeStr.split(':');
+    tempHour.value = h;
+    tempMinute.value = m;
+    isTimePickerOpen.value = true;
+};
+
+const confirmTimePicker = () => {
+    formatTimeInputs();
+    const newVal = `${tempHour.value}:${tempMinute.value}`;
+    
+    if (pickerTarget.value === 'entry') defaultEntry.value = newVal;
+    else if (pickerTarget.value === 'exit') defaultExit.value = newVal;
+    else if (pickerTarget.value === 'rate' && pickerRateIndex.value !== null) {
+        rates.value[pickerRateIndex.value].limit = newVal;
+    }
+    
+    isTimePickerOpen.value = false;
 };
 
 // Break Modal Logic
@@ -411,13 +624,6 @@ const cancelDeductionModal = () => {
     isDeductionModalOpen.value = false;
 };
 
-// Time Picker State
-const isTimePickerOpen = ref(false);
-const pickerTarget = ref(null); // 'entry' or 'exit'
-const pickerTitle = ref('');
-const tempHour = ref('00');
-const tempMinute = ref('00');
-
 // Computed neighbors for visual spinner effect
 const prevHour = computed(() => {
   const h = parseInt(tempHour.value);
@@ -466,25 +672,7 @@ const formatTimeInputs = () => {
     tempMinute.value = Math.min(59, Math.max(0, m)).toString().padStart(2, '0');
 };
 
-const openTimePicker = (target) => {
-    pickerTarget.value = target;
-    pickerTitle.value = target === 'entry' ? 'זמן כניסה' : 'זמן יציאה';
-    const timeStr = target === 'entry' ? defaultEntry.value : defaultExit.value;
-    const [h, m] = timeStr.split(':');
-    tempHour.value = h;
-    tempMinute.value = m;
-    isTimePickerOpen.value = true;
-};
-
 const closeTimePicker = () => {
-    isTimePickerOpen.value = false;
-};
-
-const confirmTimePicker = () => {
-    formatTimeInputs();
-    const newVal = `${tempHour.value}:${tempMinute.value}`;
-    if (pickerTarget.value === 'entry') defaultEntry.value = newVal;
-    else defaultExit.value = newVal;
     isTimePickerOpen.value = false;
 };
 
@@ -505,21 +693,271 @@ const confirmTimePicker = () => {
   direction: rtl;
   color: #333;
 }
-/* Header */
-.app-header {
-    background-color: #4DB6CD; 
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
-    color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+/* Header (Teal part handled by generic header class, just ensuring content flow) */
+
+/* Content */
+.content-container {
+    flex: 1;
+    overflow-y: auto;
+    background: white;
 }
 
-.header-title { font-size: 1.1rem; font-weight: 500; }
-.icon-btn.back-btn { background: none; border: none; color: white; cursor: pointer; padding: 8px; display: flex; align-items: center; }
-.header-spacer { width: 40px; }
+.info-section {
+    padding: 30px 20px;
+    text-align: center; /* Or right? Image shows right aligned text basically */
+    text-align: right;
+    border-bottom: 2px solid #eee;
+}
+
+.info-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #444;
+    text-align: right; /* Match image: Title Right */
+}
+
+.info-text {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* List */
+.shift-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.shift-item {
+    padding: 24px;
+    border-bottom: 2px solid #eee; /* Light gray separators */
+    display: flex;
+    justify-content: center; /* Centered Text */
+    align-items: center;
+    cursor: pointer;
+    background: white;
+    transition: background 0.2s;
+}
+
+.shift-item:hover {
+    background-color: #f9f9f9;
+}
+
+.shift-name-text {
+    font-size: 1.2rem;
+    color: #333;
+    font-weight: 500;
+}
+
+/* ... Existing Styles for Modals ... */
+/* Header */
+.header {
+  background-color: #0093AB;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  color: white;
+  flex-direction: row-reverse; /* Menu Left */
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.header-title-area {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: white;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+/* Sidebar Styles (Common) */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 80%;
+  max-width: 320px;
+  height: 100%;
+  background-color: #F5F5F5;
+  z-index: 2001;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  height: 160px;
+  background: linear-gradient(135deg, #4DD0E1 0%, #0093AB 80%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  color: white;
+  overflow: hidden;
+}
+
+.header-bg-decor {
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 300px;
+    background: rgba(255, 235, 59, 0.2);
+    transform: rotate(45deg);
+    z-index: 0;
+}
+
+.sidebar-top-row {
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1;
+}
+
+.account-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.sidebar-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 1;
+}
+
+.menu-label-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-icon {
+    width: 30px;
+    height: 30px;
+    fill: #ddd;
+    stroke: #aaa;
+}
+
+.menu-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    text-decoration: none;
+    color: #444;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.menu-item:hover, .menu-item.active-menu-item {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.item-icon {
+    margin-left: 16px;
+    color: #555;
+    display: flex;
+    align-items: center;
+}
+
+.spacer-small {
+    height: 16px;
+}
+
+.sidebar-footer {
+    padding: 16px;
+    margin-left: 20px;
+}
+
+/* Bottom Nav */
+.bottom-nav {
+  height: 60px;
+  background-color: #0093AB;
+  border-top: 1px solid #ddd;
+  display: flex;
+  justify-content: center; /* Center single item */
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.nav-item {
+  flex: 1; /* Stretch but content centered? Or max width */
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  max-width: 200px; /* Limit width of single tab highlight */
+}
+
+.nav-item.active {
+  color: white;
+  font-weight: 700;
+}
 
 /* Content */
 .content-container { flex: 1; overflow-y: auto; background-color: white; }

@@ -40,7 +40,37 @@ const router = createRouter({
             name: 'shift-types',
             component: () => import('../views/ShiftTypesView.vue'),
             meta: { requiresAuth: true }
-        }
+        },
+        {
+            path: '/hours',
+            name: 'hours',
+            component: () => import('../views/HoursView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/settings',
+            name: 'settings',
+            component: () => import('../views/SettingsView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/overtime-settings',
+            name: 'overtime-settings',
+            component: () => import('../views/OvertimeSettingsView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/additions-deductions',
+            name: 'additions-deductions',
+            component: () => import('../views/AdditionsDeductionsView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/tax-deductions',
+            name: 'tax-deductions',
+            component: () => import('../views/TaxDeductionsView.vue'),
+            meta: { requiresAuth: true }
+        },
     ]
 })
 
