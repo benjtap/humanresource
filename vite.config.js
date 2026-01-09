@@ -8,7 +8,7 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/auth': {
-        target: 'https://https://humanresourceapi-ibba.onrender.com/',
+        target: 'https://humanresourceapi-ibba.onrender.com/',
         targetold: 'http://localhost:5000',
         changeOrigin: true
       }

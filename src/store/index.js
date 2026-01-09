@@ -71,7 +71,6 @@ export default createStore({
         hourlyWage: state => state.settings?.hourlyWage || 50.0,
 
         // Tax Getters
-        // Tax Getters
         taxSettings: state => state.taxSettings || {},
         taxCreditPoints: state => state.taxSettings?.creditPoints || 2.25,
         taxPointValue: state => state.taxSettings?.pointValue || 242,
@@ -129,11 +128,20 @@ export default createStore({
         SET_MOCK_MODE(state, value) { state.isMockMode = value },
 
         // Metadata Mutations
+        // Combining duplicated logic from original file into single blocks where possible, 
+        // prioritizing the second/"shadowing" block seen in the original file.
+
+        SET_SHIFT_TYPES(state, types) { state.shiftTypes = types },
+
         ADD_SHIFT_TYPE(state, type) { state.shiftTypes.push(type) },
+
         UPDATE_SHIFT_TYPE(state, type) {
-            const idx = state.shiftTypes.findIndex(t => t.id === type.id)
-            if (idx !== -1) state.shiftTypes.splice(idx, 1, type)
+            const idx = state.shiftTypes.findIndex(t => t.id === type.id || t.numericId === type.numericId);
+            if (idx !== -1) {
+                state.shiftTypes.splice(idx, 1, type);
+            }
         },
+
         DELETE_SHIFT_TYPE(state, id) {
             state.shiftTypes = state.shiftTypes.filter(t => t.id !== id)
         },
@@ -173,16 +181,7 @@ export default createStore({
         SET_TAX_SETTINGS_BULK(state, settings) {
             state.taxSettings = { ...state.taxSettings, ...settings }
         },
-        SET_SHIFT_TYPES(state, types) { state.shiftTypes = types },
-        ADD_SHIFT_TYPE(state, type) { state.shiftTypes.push(type) },
-        UPDATE_SHIFT_TYPE(state, type) {
-            const idx = state.shiftTypes.findIndex(t => t.id === type.id || t.numericId === type.numericId); // Fallback to numericId
-            if (idx !== -1) {
-                // If ID Changed (Shadowing), replace entire object.
-                state.shiftTypes.splice(idx, 1, type);
-            }
-        },
-        DELETE_SHIFT_TYPE(state, id) { state.shiftTypes = state.shiftTypes.filter(t => t.id !== id) },
+
         SET_PAYMENT_TYPES(state, types) { state.paymentTypes = types },
         SET_SICK_TYPES(state, types) { state.sickTypes = types },
         SET_ADDITIONS_DEDUCTIONS(state, items) { state.additionsDeductions = items },
@@ -201,7 +200,6 @@ export default createStore({
             commit('SET_TOKEN', token)
             dispatch('fetchInitialData')
         },
-        // ...
         logout({ commit }) {
             commit('LOGOUT')
         },
@@ -271,7 +269,6 @@ export default createStore({
                     await shiftService.createShift(shift)
                 } catch (e) {
                     console.error('Failed to create shift API', e);
-                    // Optional: Rollback logic if needed
                 }
             }
         },
@@ -300,11 +297,8 @@ export default createStore({
 
         // Helper to handle CRUD based on Mode
         async sync({ commit, state, dispatch }) {
-            // Sync only useful in API mode usually, or to persist Mock changes locally?
-            // For now, only API sync
             if (state.isMockMode || state.isSyncing || !state.token) return
             commit('SET_SYNCING', true)
-            // ... (rest of sync logic)
             try {
                 if (state.pendingSync.length > 0) {
                     await dispatch('pushPending')
@@ -318,9 +312,8 @@ export default createStore({
         },
 
         async pushPending({ state, commit }) {
-            if (state.isMockMode) return // No pushing in mock mode
+            if (state.isMockMode) return
             const pending = [...state.pendingSync]
-            // ...
 
             for (const op of pending) {
                 try {
@@ -341,9 +334,7 @@ export default createStore({
         // Metadata Actions
         async fetchShiftTypes({ commit, state }) {
             if (state.isMockMode) {
-                commit('SET_SHIFT_TYPES', mockShiftTypes) // Need mutation? It's fine to just rely on initial state or persistent, but fetching re-sets it.
-                // Actually mockShiftTypes is already in state default. But if we want to "reset" to mock:
-                // state.shiftTypes = mockShiftTypes;
+                commit('SET_SHIFT_TYPES', mockShiftTypes)
                 return
             }
             try {
@@ -356,13 +347,10 @@ export default createStore({
             if (!state.isMockMode) await shiftTypeService.createShiftType(type)
         },
         async updateShiftType({ commit, state }, type) {
-            // commit('UPDATE_SHIFT_TYPE', type) // OPTIMISTIC removed to ensure ID sync
             if (!state.isMockMode) {
                 try {
                     const res = await shiftTypeService.updateShiftType(type.id, type)
                     if (res.data) {
-                        // The ID might have changed if we engaged "shadowing" (override global)
-                        // We need to handle this in mutation.
                         commit('UPDATE_SHIFT_TYPE', res.data)
                     }
                 } catch (e) {
@@ -394,8 +382,6 @@ export default createStore({
         // Additions/Deductions
         async fetchAdditionsDeductions({ commit, state }) {
             if (state.isMockMode) {
-                // return // Use local (empty?) or could implement Mock Additions?
-                // For now user didn't provide mockAdditions, so maybe empty is fine or keep logic consistent.
                 return
             }
             try {
@@ -441,8 +427,6 @@ export default createStore({
                     commit('SET_SALARY_START_DAY', res.data.salaryStartDay)
                     commit('SET_HOURLY_WAGE', res.data.hourlyWage)
                     if (res.data.taxSettings) {
-                        // Iterate and set tax settings? Or just bulk set if we had a bulk mutation.
-                        // We have singular mutations.
                         commit('SET_TAX_SETTINGS_BULK', res.data.taxSettings)
                     }
                 }
@@ -508,7 +492,7 @@ export default createStore({
     plugins: [
         createPersistedState({
             key: 'human-resource-data',
-            paths: ['shifts', 'pendingSync', 'lastSync', 'shiftTypes', 'paymentTypes', 'sickTypes', 'weeklyPlans', 'settings', 'additionsDeductions', 'taxSettings', 'isMockMode'] // Only persist data, auth is handled manually/localStorage
+            paths: ['token', 'user', 'shifts', 'pendingSync', 'lastSync', 'shiftTypes', 'paymentTypes', 'sickTypes', 'weeklyPlans', 'settings', 'additionsDeductions', 'taxSettings', 'isMockMode']
         })
     ]
 })
