@@ -38,7 +38,7 @@ export default createStore({
         // Settings (Persistent)
         settings: {
             salaryStartDay: 1, // Default 1st of month
-            hourlyWage: 45.0
+            hourlyWage: 50.0
         },
         taxSettings: {
             creditPoints: 2.25,
@@ -68,7 +68,7 @@ export default createStore({
 
         // Settings Getters
         salaryStartDay: state => state.settings?.salaryStartDay || 1,
-        hourlyWage: state => state.settings?.hourlyWage || 45.0,
+        hourlyWage: state => state.settings?.hourlyWage || 50.0,
 
         // Tax Getters
         // Tax Getters
