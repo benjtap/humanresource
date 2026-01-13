@@ -592,7 +592,24 @@ const editShiftType = (type) => {
     shiftColor.value = type.color || '#FFFFFF';
     defaultEntry.value = type.entry || '07:00';
     defaultExit.value = type.exit || '16:15';
-    breakTime.value = type.break || 0;
+    
+    // Calculate Break from Rules (consistent with OvertimeSettings)
+    const allDetailRules = store.getters.allAdditionsDeductions || [];
+    const matchingBreakRules = allDetailRules.filter(r => {
+        const isTimeBased = (r.type === 'deduction' && r.mode === 'time') || r.type === 'break' || (r.minutes && r.minutes > 0);
+        if (!isTimeBased) return false;
+        
+        const ruleShiftIds = r.shiftIds || [];
+        if (ruleShiftIds.length === 0) return true;
+        return ruleShiftIds.some(id => String(id) === String(type.id));
+    });
+
+    const calculatedBreakVal = matchingBreakRules.reduce((sum, r) => {
+        return sum + (Number(r.minutes) || Number(r.amount) || 0);
+    }, 0);
+
+    breakTime.value = calculatedBreakVal || type.break || 0;
+    
     extraAmount.value = type.extra || 0;
     deductionAmount.value = type.deduction || 0;
     rates.value = (type.rates && type.rates.length) 

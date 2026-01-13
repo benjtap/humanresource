@@ -124,22 +124,9 @@
                 <!-- Shift Scope -->
                 <div class="form-row">
                     <label>משמרות:</label>
-                    <div class="input-wrapper relative">
-                        <div class="form-input dropdown-trigger" @click.stop="isShiftDropdownOpen = !isShiftDropdownOpen">
+                    <div class="input-wrapper" @click="openShiftSelectionModal">
+                        <div class="form-input">
                             {{ formattedShiftLabel }}
-                        </div>
-                        
-                        <!-- Custom Dropdown -->
-                        <div v-if="isShiftDropdownOpen" class="custom-dropdown-menu" @click.stop>
-                            <label class="dropdown-item">
-                                <input type="checkbox" :checked="isAllShiftsSelected" @change="toggleAllShifts">
-                                <span>כל המשמרות</span>
-                            </label>
-                            <div class="dropdown-divider"></div>
-                            <label v-for="shift in shiftTypes" :key="shift.id" class="dropdown-item">
-                                <input type="checkbox" :checked="form.shiftIds.includes(shift.id)" @change="toggleShift(shift.id)">
-                                <span>{{ shift.name }}</span>
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -224,6 +211,38 @@
           <div class="input-modal-footer">
             <button class="modal-btn confirm" @click="confirmDescriptionModal">אישור</button>
             <button class="modal-btn cancel" @click="cancelDescriptionModal">ביטול</button>
+          </div>
+        </div>
+    </div>
+
+    <!-- Shift Selection Modal -->
+    <div v-if="isShiftSelectionModalOpen" class="input-modal-overlay" @click.self="isShiftSelectionModalOpen = false">
+        <div class="input-modal">
+          <div class="input-modal-title">בחר משמרות</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="shift-type-body scrollable-options">
+             <!-- All Shifts Option -->
+             <label class="shift-type-option" @click.stop="toggleAllShifts">
+                 <span class="option-label">כל המשמרות</span>
+                 <div class="checkbox-box" :class="{ checked: isAllShiftsSelected }">
+                    <svg v-if="isAllShiftsSelected" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                 </div>
+             </label>
+
+             <div class="dropdown-divider-horizontal"></div>
+
+             <!-- Individual Shifts -->
+             <label v-for="shift in shiftTypes" :key="shift.id" class="shift-type-option" @click.stop="toggleShift(shift.id)">
+               <span class="option-label">{{ shift.name }}</span>
+               <div class="checkbox-box" :class="{ checked: form.shiftIds.includes(shift.id) }">
+                    <svg v-if="form.shiftIds.includes(shift.id)" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+               </div>
+             </label>
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="isShiftSelectionModalOpen = false">אישור</button>
           </div>
         </div>
     </div>
@@ -352,7 +371,8 @@ const shiftTypes = computed(() => store.getters.allShiftTypes);
 const items = computed(() => store.getters.allAdditionsDeductions || []); 
 
 const isFormModalOpen = ref(false);
-const isShiftDropdownOpen = ref(false);
+const isShiftDropdownOpen = ref(false); // Deprecated, will be removed in template
+const isShiftSelectionModalOpen = ref(false);
 
 const openFormModal = () => {
     resetForm();
@@ -361,6 +381,11 @@ const openFormModal = () => {
 const closeFormModal = () => {
     isFormModalOpen.value = false;
 }
+
+const openShiftSelectionModal = () => {
+    console.log("Opening Shift Selection Modal");
+    isShiftSelectionModalOpen.value = true;
+};
 
 const openTypeModal = () => {
     isTypeModalOpen.value = true;
@@ -816,46 +841,7 @@ const cancelAmountModal = () => { isAmountModalOpen.value = false; };
     min-height: 38px; 
 }
 
-.custom-dropdown-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    width: 100%;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 100;
-    max-height: 200px;
-    overflow-y: auto;
-    margin-top: 4px;
-}
 
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    cursor: pointer;
-    transition: background 0.1s;
-    gap: 10px;
-}
-
-.dropdown-item:hover {
-    background-color: #f5f5f5;
-}
-
-.dropdown-item input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #0093AB;
-    cursor: pointer;
-}
-
-.dropdown-divider {
-    height: 1px;
-    background-color: #eee;
-    margin: 4px 0;
-}
 
 /* Form Card style removed / merged */
 
@@ -1166,70 +1152,7 @@ const cancelAmountModal = () => { isAmountModalOpen.value = false; };
     color: white;
     background-color: rgba(0,0,0,0.1);
 }
-/* Input Modal Styles */
-.input-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 3000;
-}
 
-.input-modal {
-    background: white;
-    width: 85%;
-    max-width: 320px;
-    border-radius: 4px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    text-align: center;
-}
-
-.input-modal-title {
-    color: #4facfe; /* Light Blue */
-    font-size: 1.2rem;
-    font-weight: 500;
-    padding: 15px;
-    background-color: white;
-}
-
-.input-title-divider {
-    height: 2px;
-    background-color: #4facfe;
-    width: 100%;
-}
-
-.shift-type-body {
-    display: flex;
-    flex-direction: column;
-}
-
-.shift-type-option {
-    display: flex;
-    justify-content: space-between; /* Text Right, Radio Left */
-    align-items: center;
-    padding: 15px 20px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    font-size: 1.1rem;
-    color: #333;
-}
-
-.shift-type-option:last-child {
-    border-bottom: none;
-}
-
-.option-radio {
-    width: 18px;
-    height: 18px;
-    accent-color: #4facfe;
-    cursor: pointer;
-}
 /* Input Modal Styles (Shared/Consistent with ShiftTypesView) */
 .input-modal-overlay {
   position: fixed;
@@ -1274,6 +1197,25 @@ const cancelAmountModal = () => { isAmountModalOpen.value = false; };
 
 .input-modal-body {
     padding: 25px 20px;
+}
+
+.shift-type-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.shift-type-option {
+    display: flex;
+    justify-content: space-between; /* Text Right, Radio Left */
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #333;
+}
+.shift-type-option:last-child {
+    border-bottom: none;
 }
 
 .input-instruction {
@@ -1346,5 +1288,32 @@ const cancelAmountModal = () => { isAmountModalOpen.value = false; };
 .mode-toggle .separator {
     color: #ccc;
     font-size: 1.2rem;
+}
+
+.scrollable-options {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.checkbox-box {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.checkbox-box.checked {
+    background-color: #29B6F6;
+    border-color: #29B6F6;
+}
+
+.dropdown-divider-horizontal {
+    height: 1px;
+    background-color: #eee;
+    margin: 0 10px;
 }
 </style>
