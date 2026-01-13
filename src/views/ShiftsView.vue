@@ -3019,99 +3019,118 @@ const cancelPress = () => {
     isLongPressHandled.value = false;
 };
 
+// Flag to prevent rapid-fire clicks creating duplicates
+const isAddingPlanShifts = ref(false);
+
 const addAllShiftsFromPlan = async (plan) => {
-    let addedCount = 0;
-    let conflictCount = 0;
-    const planStart = new Date(plan.weekStart);
+    if (isAddingPlanShifts.value) return; // Block re-entry
+    isAddingPlanShifts.value = true;
     
-    // We assume plan.days is ordered Sunday to Saturday (0 to 6)
-    for (let i = 0; i < 7; i++) {
-        const dayPlan = plan.days[i];
-        if (!dayPlan || !dayPlan.isActive) continue;
-
-        const targetDate = new Date(planStart);
-        targetDate.setDate(targetDate.getDate() + i);
+    try {
+        let addedCount = 0;
+        let conflictCount = 0;
+        const planStart = new Date(plan.weekStart);
         
-        // Skip Saturday check just in case, though is Day 6
-        if (targetDate.getDay() === 6) continue;
-
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        targetDate.setHours(0,0,0,0);
-        
-        // Prepare Shift Data
-        const dStr = targetDate.getDate().toString().padStart(2, '0');
-        const mStr = (targetDate.getMonth() + 1).toString().padStart(2, '0');
-        const y = targetDate.getFullYear();
-        const fullDate = `${dStr}/${mStr}/${y}`;
-        
-        // Construct Shift TEMPLATE for overlap check
-        const entry = dayPlan.entry;
-        const exit = dayPlan.exit;
-        
-        const [eH, eM] = entry.split(':').map(Number);
-        const [xH, xM] = exit.split(':').map(Number);
-        let duration = 0;
-        if (!isNaN(eH) && !isNaN(xH)) {
-             let startMin = eH * 60 + eM;
-             let endMin = xH * 60 + xM;
-             if (endMin < startMin) endMin += 24 * 60;
-             duration = (endMin - startMin) / 60;
+        // We assume plan.days is ordered Sunday to Saturday (0 to 6)
+        for (let i = 0; i < 7; i++) {
+            const dayPlan = plan.days[i];
+            if (!dayPlan || !dayPlan.isActive) continue;
+            // ... rest of loop logic stays same but we need to ensure we don't break the try block structure
+            
+            // To minimize replace footprint, I will just call the original logic processing inside.
+            // But since I'm replacing the start of the function, I effectively wrap it.
+            // Wait, I need to match the original code indentation/vars.
+            
+            /* ... Original Logic Replication for context valid ... */
+            
+            const targetDate = new Date(planStart);
+            targetDate.setDate(targetDate.getDate() + i);
+            
+            // Skip Saturday check just in case, though is Day 6
+            if (targetDate.getDay() === 6) continue;
+    
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            targetDate.setHours(0,0,0,0);
+            
+            // Prepare Shift Data
+            const dStr = targetDate.getDate().toString().padStart(2, '0');
+            const mStr = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+            const y = targetDate.getFullYear();
+            const fullDate = `${dStr}/${mStr}/${y}`;
+            
+            // Construct Shift TEMPLATE for overlap check
+            const entry = dayPlan.entry;
+            const exit = dayPlan.exit;
+            
+            const [eH, eM] = entry.split(':').map(Number);
+            const [xH, xM] = exit.split(':').map(Number);
+            let duration = 0;
+            if (!isNaN(eH) && !isNaN(xH)) {
+                 let startMin = eH * 60 + eM;
+                 let endMin = xH * 60 + xM;
+                 if (endMin < startMin) endMin += 24 * 60;
+                 duration = (endMin - startMin) / 60;
+            }
+            const hoursStr = isNaN(duration) ? '0:00' : `${Math.floor(duration).toString().padStart(2,'0')}:${Math.round((duration % 1) * 60).toString().padStart(2,'0')}`;
+            const salaryStr = (duration * 45).toFixed(2); 
+    
+            const newShift = {
+                dayNumber: dStr,
+                dayName: dayPlan.dayName,
+                fullDate: fullDate,
+                type: dayPlan.shiftName,
+                entry: entry,
+                exit: exit,
+                hours: hoursStr,
+                salary: salaryStr,
+                break: 0,
+                extra: 0,
+                deduction: 0,
+                notes: '',
+                date: targetDate.toISOString()
+            };
+            
+            // Apply defaults (break, extra, deduction) based on Shift Type
+            const defaults = getShiftDefaults(dayPlan.shiftName);
+            newShift.break = defaults.break;
+            newShift.extra = defaults.extra;
+            newShift.deduction = defaults.deduction;
+            
+            // Re-calculate Hours/Salary with the applied break
+            // calculateShiftData uses the break value we just set
+            const calculated = calculateShiftData(newShift);
+            newShift.hours = calculated.hoursStr;
+            newShift.salary = calculated.salaryStr;
+    
+            // Check Overlap
+            const allShifts = store.getters.allShifts;
+            if (checkOverlap(newShift, -1, allShifts, targetDate)) {
+                conflictCount++;
+                continue;
+            }
+    
+            // Add
+            try {
+                await store.dispatch('addShift', newShift);
+                addedCount++;
+            } catch (e) {
+                console.error('Error adding shift from plan', e);
+            }
         }
-        const hoursStr = isNaN(duration) ? '0:00' : `${Math.floor(duration).toString().padStart(2,'0')}:${Math.round((duration % 1) * 60).toString().padStart(2,'0')}`;
-        const salaryStr = (duration * 45).toFixed(2); 
-
-        const newShift = {
-            dayNumber: dStr,
-            dayName: dayPlan.dayName,
-            fullDate: fullDate,
-            type: dayPlan.shiftName,
-            entry: entry,
-            exit: exit,
-            hours: hoursStr,
-            salary: salaryStr,
-            break: 0,
-            extra: 0,
-            deduction: 0,
-            notes: '',
-            date: targetDate.toISOString()
-        };
-        
-        // Apply defaults (break, extra, deduction) based on Shift Type
-        const defaults = getShiftDefaults(dayPlan.shiftName);
-        newShift.break = defaults.break;
-        newShift.extra = defaults.extra;
-        newShift.deduction = defaults.deduction;
-        
-        // Re-calculate Hours/Salary with the applied break
-        // calculateShiftData uses the break value we just set
-        const calculated = calculateShiftData(newShift);
-        newShift.hours = calculated.hoursStr;
-        newShift.salary = calculated.salaryStr;
-
-        // Check Overlap
-        const allShifts = store.getters.allShifts;
-        if (checkOverlap(newShift, -1, allShifts, targetDate)) {
-            conflictCount++;
-            continue;
+    
+        if (addedCount > 0) {
+            showToast('success', `נוספו ${addedCount} משמרות${conflictCount ? ` (דולגו ${conflictCount} חפיפות)` : ''}`);
+            isQuickShiftModalOpen.value = false;
+        } else {
+             showToast('info', conflictCount > 0 ? 'לא נוספו משמרות (נמצאו חפיפות)' : 'לא נוספו משמרות');
         }
-
-        // Add
-        try {
-            await store.dispatch('addShift', newShift);
-            addedCount++;
-        } catch (e) {
-            console.error('Error adding shift from plan', e);
-        }
-    }
-
-    if (addedCount > 0) {
-        showToast('success', `נוספו ${addedCount} משמרות${conflictCount ? ` (דולגו ${conflictCount} חפיפות)` : ''}`);
-        isQuickShiftModalOpen.value = false;
-    } else {
-         showToast('info', conflictCount > 0 ? 'לא נוספו משמרות (נמצאו חפיפות)' : 'לא נוספו משמרות');
+    } finally {
+        isAddingPlanShifts.value = false;
     }
 };
+
+
 
 // Toast Logic
 const toastVisible = ref(false);
