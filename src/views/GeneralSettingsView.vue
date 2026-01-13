@@ -176,7 +176,8 @@
 
     <!-- Bottom Scrollable Tabs -->
     <div class="bottom-tabs-container">
-        <button class="bottom-tab" @click="$router.push('/settings')">
+        <div class="bottom-tabs-scroll">
+            <button class="bottom-tab" @click="$router.push('/settings')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             <span>הגדרות שכר</span>
         </button>
@@ -196,6 +197,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             <span>כללי</span>
         </button>
+        </div>
     </div>
 
     <!-- Sidebar Overlay -->
@@ -1311,7 +1313,7 @@ input:checked + .slider:before {
     margin-left: 20px;
 }
 
-/* Bottom Tabs Mobile Scroll Fix */
+/* Bottom Tabs */
 .bottom-tabs-container {
     height: 70px;
     background-color: #0093AB;
@@ -1322,32 +1324,34 @@ input:checked + .slider:before {
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    direction: rtl; /* Ensure RTL scrolling behavior */
-    scroll-snap-type: x mandatory;
 }
 .bottom-tabs-container::-webkit-scrollbar {
     display: none;
 }
 
-/* .bottom-tabs-scroll removed */
+.bottom-tabs-scroll {
+    display: flex;
+    flex-direction: row-reverse; /* RTL Order */
+    height: 100%;
+    min-width: 100%;
+    width: max-content;
+}
 
 .bottom-tab {
-    flex: 0 0 auto;
-    width: 25%; /* Show roughly 4 items */
+    flex: 1 0 100px;
     min-width: 100px;
     background: none;
     border: none;
     color: rgba(255,255,255,0.7);
     display: flex;
-    flex-direction: column; 
+    flex-direction: column; /* Icon Top */
     align-items: center;
     justify-content: center;
     gap: 5px;
     font-size: 0.9rem;
     cursor: pointer;
     border-left: 1px solid rgba(255,255,255,0.1);
-    padding: 0 5px;
-    scroll-snap-align: start;
+    padding: 0 16px;
 }
 
 .bottom-tab.active {
