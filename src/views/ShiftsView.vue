@@ -2773,12 +2773,33 @@ const totalSalary = computed(() => {
 });
 
 // Fetch Data (Dummy wrapper for compatibility or trigger store fetch)
+// Fetch Data
 const fetchShifts = async (date) => {
-    // In API mode, data is loaded via store.
-    // If we need to lazy load by month, we would dispatch here.
-    // For now, checks if data exists?
     isLoading.value = true;
-    setTimeout(() => { isLoading.value = false; }, 300); // UI feedback
+    try {
+        // Fetch fresh data from backend
+        // We use fetchInitialData on first load or just fetchShifts? 
+        // Since getShifts returns all user shifts, and specific settings/types might be needed,
+        // it is safer to ensure we have fresh data.
+        await store.dispatch('fetchShifts'); 
+        
+        // If it's the VERY first load, we might want to ensure types/settings are also there
+        if (store.getters.allShiftTypes.length === 0) {
+             await store.dispatch('fetchShiftTypes');
+        }
+        if (Object.keys(store.getters.generalSettings).length === 0) {
+             await store.dispatch('fetchSettings');
+        }
+    } catch(e) {
+        console.error("Error fetching shifts:", e);
+    } finally {
+        // Add a small artificial delay only if it was too fast, or just finish.
+        // User wants to SEE the loader.
+        // If it's instant (cached), user won't see it.
+        // Let's ensure at least 500ms loader for "Visual Feedback" on reload if that's what is requested.
+        // But usually real network takes time.
+        isLoading.value = false;
+    }
 };
 
 // Initial Fetch
