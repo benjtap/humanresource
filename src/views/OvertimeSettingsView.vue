@@ -99,18 +99,18 @@
                     הוסף תעריף נוסף
                 </button>
 
-                <!-- Bottom Inputs -->
+                <!-- Bottom Inputs (Indicative Only - Managed Globally) -->
                 <div class="bottom-inputs">
-                    <div class="input-row" @click="openInputModal('break', tempBreak)">
-                        <input type="number" v-model="tempBreak" class="bottom-input" readonly>
+                    <div class="input-row"> <!-- Removed click handler -->
+                        <input type="number" v-model="tempBreak" class="bottom-input" readonly style="opacity: 0.7; background: #f5f5f5;">
                         <label>הפסקה (דק'):</label>
                     </div>
-                    <div class="input-row" @click="openInputModal('extra', tempExtra)">
-                        <input type="number" v-model="tempExtra" class="bottom-input" readonly>
+                    <div class="input-row"> <!-- Removed click handler -->
+                        <input type="number" v-model="tempExtra" class="bottom-input" readonly style="opacity: 0.7; background: #f5f5f5;">
                         <label>תוספת יומית (ש"ח):</label>
                     </div>
-                    <div class="input-row" @click="openInputModal('deduction', tempDeduction)">
-                        <input type="number" v-model="tempDeduction" class="bottom-input" readonly>
+                    <div class="input-row"> <!-- Removed click handler -->
+                        <input type="number" v-model="tempDeduction" class="bottom-input" readonly style="opacity: 0.7; background: #f5f5f5;">
                         <label>הורדה יומית (ש"ח):</label>
                     </div>
                 </div>
@@ -361,14 +361,16 @@ const openShiftModal = (type) => {
     tempEntry.value = type.entry || '07:00';
     tempExit.value = type.exit || '17:00';
     
-    // Calculate Break from Rules (Additions/Deductions)
+    // 1. Calculate Global Break (Master: General Settings/Rules)
     const allRules = store.getters.allAdditionsDeductions || [];
     const matchingRules = allRules.filter(r => {
         const isTimeBased = (r.type === 'deduction' && r.mode === 'time') || r.type === 'break' || (r.minutes && r.minutes > 0);
         if (!isTimeBased) return false;
         
         const ruleShiftIds = r.shiftIds || [];
-        // Global or specific to this shift
+        // Apply Global rules ONLY (User requested no specific overrides)
+        // Or if specific logic is needed, we can keep it, but we won't SAVE it to the type.
+        // For now, allow specific rules if defined in Rules engine, but normally "Global" implies empty shiftIds.
         if (ruleShiftIds.length === 0) return true;
         return ruleShiftIds.some(id => String(id) === String(type.id));
     });
@@ -377,9 +379,10 @@ const openShiftModal = (type) => {
         return sum + (Number(r.minutes) || Number(r.amount) || 0);
     }, 0);
 
-    tempBreak.value = calculatedBreak || type.break || 0; // Fallback to type.break
+    // Display Calculated Value (Indicative Only) - Do NOT use saved type.break
+    tempBreak.value = calculatedBreak || 0;
 
-    // Calculate Extra/Deduction from Daily Rules (Global or Specific)
+    // 2. Calculate Global Extra/Deduction (Indicative Only)
     const rulesExtra = allRules.filter(r => 
         (r.type === 'addition') && (r.mode === 'amount') && (r.period === 'daily') &&
         ((r.shiftIds || []).length === 0 || (r.shiftIds || []).includes(type.id))
@@ -390,11 +393,8 @@ const openShiftModal = (type) => {
         ((r.shiftIds || []).length === 0 || (r.shiftIds || []).includes(type.id))
     ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
-    const tExtra = type.extra || 0;
-    const tDeduction = type.deduction || 0;
-
-    tempExtra.value = tExtra > 0 ? tExtra : rulesExtra;
-    tempDeduction.value = tDeduction > 0 ? tDeduction : rulesDeduction;
+    tempExtra.value = rulesExtra;
+    tempDeduction.value = rulesDeduction;
 
     // Deep copy rules or init array
     tempRules.value = type.rates ? JSON.parse(JSON.stringify(type.rates)) : [];
@@ -418,9 +418,11 @@ const saveShiftChanges = () => {
                 color: type.color, // Preserve color
                 entry: tempEntry.value,
                 exit: tempExit.value,
-                break: parseInt(tempBreak.value),
-                extra: parseFloat(tempExtra.value),
-                deduction: parseFloat(tempDeduction.value),
+                // CRITICAL: Force 0 to ensure Shift Type does NOT override Global Rules.
+                // These fields are now "Indicative" in the UI and controlled globally.
+                break: 0,
+                extra: 0,
+                deduction: 0, 
                 rates: JSON.parse(JSON.stringify(tempRules.value)) // Ensure clean array
             };
             store.dispatch('updateShiftType', payload);
