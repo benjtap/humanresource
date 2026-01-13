@@ -24,6 +24,7 @@ const getDefaultState = () => ({
     lastSync: null,
 
     isSyncing: false,
+    isLoadingRoute: false,
     isMockMode: false,
 
     // Metadata (Persistent)
@@ -97,7 +98,8 @@ export default createStore({
         taxIsStudyFundFixed182: state => state.taxSettings?.isStudyFundFixed182 || false,
         taxPensionFund: state => state.taxSettings?.pensionFund || 5,
         taxIsPensionFundFixed182: state => state.taxSettings?.isPensionFundFixed182 || false,
-        isMockMode: state => state.isMockMode
+        isMockMode: state => state.isMockMode,
+        isLoadingRoute: state => state.isLoadingRoute
     },
     mutations: {
         SET_TOKEN(state, token) {
@@ -134,6 +136,7 @@ export default createStore({
         CLEAR_PENDING(state) { state.pendingSync = [] },
         SET_LAST_SYNC(state, timestamp) { state.lastSync = timestamp },
         SET_SYNCING(state, syncing) { state.isSyncing = syncing },
+        SET_LOADING_ROUTE(state, val) { state.isLoadingRoute = val },
         TOGGLE_MOCK_MODE(state) { state.isMockMode = !state.isMockMode },
         SET_MOCK_MODE(state, value) { state.isMockMode = value },
         SET_SHIFT_TYPES(state, types) { state.shiftTypes = types },

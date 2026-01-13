@@ -379,8 +379,22 @@ const openShiftModal = (type) => {
 
     tempBreak.value = calculatedBreak || type.break || 0; // Fallback to type.break
 
-    tempExtra.value = type.extra || 0;
-    tempDeduction.value = type.deduction || 0;
+    // Calculate Extra/Deduction from Daily Rules (Global or Specific)
+    const rulesExtra = allRules.filter(r => 
+        (r.type === 'addition') && (r.mode === 'amount') && (r.period === 'daily') &&
+        ((r.shiftIds || []).length === 0 || (r.shiftIds || []).includes(type.id))
+    ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    const rulesDeduction = allRules.filter(r => 
+        (r.type === 'deduction') && (r.mode === 'amount') && (r.period === 'daily') &&
+        ((r.shiftIds || []).length === 0 || (r.shiftIds || []).includes(type.id))
+    ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    const tExtra = type.extra || 0;
+    const tDeduction = type.deduction || 0;
+
+    tempExtra.value = tExtra > 0 ? tExtra : rulesExtra;
+    tempDeduction.value = tDeduction > 0 ? tDeduction : rulesDeduction;
 
     // Deep copy rules or init array
     tempRules.value = type.rates ? JSON.parse(JSON.stringify(type.rates)) : [];

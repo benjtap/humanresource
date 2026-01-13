@@ -608,10 +608,26 @@ const editShiftType = (type) => {
         return sum + (Number(r.minutes) || Number(r.amount) || 0);
     }, 0);
 
+    // Calculate Addition/Deduction Defaults from Rules
+    const rulesExtra = allDetailRules.filter(r => 
+        (r.type === 'addition') && (r.mode === 'amount') && (r.period === 'daily') &&
+        ((r.shiftIds || []).length === 0 || (r.shiftIds || []).includes(type.id))
+    ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    const rulesDeduction = allDetailRules.filter(r => 
+        (r.type === 'deduction') && (r.mode === 'amount') && (r.period === 'daily') &&
+        ((r.shiftIds || []).length === 0 || (r.shiftIds || []).includes(type.id))
+    ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
     breakTime.value = calculatedBreakVal || type.break || 0;
     
-    extraAmount.value = type.extra || 0;
-    deductionAmount.value = type.deduction || 0;
+    // Use Specific value if set (>0), otherwise Global Rule
+    const tExtra = type.extra || 0;
+    const tDeduction = type.deduction || 0;
+
+    extraAmount.value = tExtra > 0 ? tExtra : rulesExtra;
+    deductionAmount.value = tDeduction > 0 ? tDeduction : rulesDeduction;
+
     rates.value = (type.rates && type.rates.length) 
         ? JSON.parse(JSON.stringify(type.rates)) 
         : [{ limit: '08:00', value: 100 }];
@@ -627,8 +643,22 @@ const createNewShiftType = () => {
     defaultEntry.value = '07:00';
     defaultExit.value = '16:15';
     breakTime.value = 0;
-    extraAmount.value = 0;
-    deductionAmount.value = 0;
+    
+    // Calculate Defaults for NEW type (Only "All Shifts" rules apply)
+    const allDetailRules = store.getters.allAdditionsDeductions || [];
+    
+    const rulesExtra = allDetailRules.filter(r => 
+        (r.type === 'addition') && (r.mode === 'amount') && (r.period === 'daily') &&
+        ((r.shiftIds || []).length === 0)
+    ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    const rulesDeduction = allDetailRules.filter(r => 
+        (r.type === 'deduction') && (r.mode === 'amount') && (r.period === 'daily') &&
+        ((r.shiftIds || []).length === 0)
+    ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    extraAmount.value = rulesExtra;
+    deductionAmount.value = rulesDeduction;
     rates.value = [{ limit: '08:00', value: 100 }];
     isModalOpen.value = true;
 };

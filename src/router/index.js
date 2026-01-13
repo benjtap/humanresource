@@ -83,8 +83,10 @@ const router = createRouter({
 import store from '../store'
 
 router.beforeEach((to, from, next) => {
-    const isAuthenticated = store.getters.isAuthenticated
+    // Start Loading Indicator
+    store.commit('SET_LOADING_ROUTE', true);
 
+    const isAuthenticated = store.getters.isAuthenticated
     if (to.meta.requiresAuth && !isAuthenticated) {
         next({ name: 'login' })
     } else if (to.meta.guest && isAuthenticated) {
@@ -92,6 +94,14 @@ router.beforeEach((to, from, next) => {
     } else {
         next()
     }
+})
+
+router.afterEach(() => {
+    // Stop Loading Indicator
+    // Minimal delay to prevent flickering on fast loads
+    setTimeout(() => {
+        store.commit('SET_LOADING_ROUTE', false);
+    }, 300);
 })
 
 export default router

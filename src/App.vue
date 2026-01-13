@@ -18,6 +18,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <div v-if="$store.getters.isLoadingRoute" class="global-loader"></div>
   <RouterView />
   
   <!-- Global Toast Notification -->
@@ -102,5 +103,24 @@ body {
 .fade-fast-leave-to {
   opacity: 0;
   transform: translate(-50%, -20px);
+}
+
+/* Global Route Loader */
+.global-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 4px;
+    z-index: 10000;
+    background: linear-gradient(90deg, #0093AB, #4DD0E1, #ffffff);
+    background-size: 200% 100%;
+    animation: loadingRoute 1.5s infinite linear;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+@keyframes loadingRoute {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
 }
 </style>

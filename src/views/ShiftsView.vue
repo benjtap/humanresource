@@ -2730,21 +2730,50 @@ const weeklyPlans = computed(() => store.getters.allWeeklyPlans);
 // Helper to get defaults from Shift Type settings
 const getShiftDefaults = (typeName) => {
     const type = shiftTypes.value.find(t => t.name === typeName);
+    
+    // 1. Calculate Global Defaults (Daily Rules)
+    const globalRules = store.getters.allAdditionsDeductions || [];
+    let ruleExtra = 0;
+    let ruleDeduction = 0;
+
+    globalRules.forEach(rule => {
+        if (rule.period !== 'daily') return;
+        
+        // Scope Check (All Shifts OR Specific Shift Type)
+        // Note: If type is undefined (e.g. valid type deleted), we might still want global rules if they apply to "All".
+        // But for specific ID matching we need 'type'.
+        const appliesToType = !rule.shiftIds || rule.shiftIds.length === 0 || (type && rule.shiftIds.includes(type.id));
+        
+        if (appliesToType) {
+            if (rule.type === 'addition') {
+                ruleExtra += Number(rule.amount || 0);
+            } else if (rule.type === 'deduction') {
+                ruleDeduction += Number(rule.amount || 0);
+            }
+        }
+    });
+
     if (!type) {
-        return { break: 0, extra: 0, deduction: 0 };
+        return { break: 0, extra: ruleExtra, deduction: ruleDeduction };
     }
     
-    // Priority Fix: Use Shift Type defined break FIRST (Specific). If 0, fallback to Global Rules.
+    // 2. Break Priority (Type Specific > Global Rule)
     const typeBreak = Number(type.break || 0);
     const ruleBreak = calculateBreakMinutes(type.id);
-    
-    // If Shift Type has a specific Break (e.g. 42), use it. Otherwise use Rule (e.g. 20).
     const finalBreak = typeBreak > 0 ? typeBreak : ruleBreak;
+
+    // 3. Extra/Deduction Priority (Type Specific > Global Rule)
+    // If Shift Type has defined value (>0), use it. Else use Global Rule sum.
+    const typeExtra = Number(type.extra || 0);
+    const typeDeduction = Number(type.deduction || 0);
+    
+    const finalExtra = typeExtra > 0 ? typeExtra : ruleExtra;
+    const finalDeduction = typeDeduction > 0 ? typeDeduction : ruleDeduction;
 
     return {
         break: finalBreak,
-        extra: type.extra || 0,
-        deduction: type.deduction || 0
+        extra: finalExtra,
+        deduction: finalDeduction
     };
 };
 
