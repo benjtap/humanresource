@@ -1312,4 +1312,51 @@ input:checked + .slider:before {
     padding: 16px;
     margin-left: 20px;
 }
+
+/* Bottom Tabs Mobile Scroll Fix */
+.bottom-tabs-container {
+    height: 70px;
+    background-color: #0093AB;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    overflow-x: auto; /* Scrollable horizontal */
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    direction: rtl; /* Ensure RTL scrolling behavior */
+}
+.bottom-tabs-container::-webkit-scrollbar {
+    display: none;
+}
+
+.bottom-tabs-scroll {
+    display: flex;
+    /* flex-direction: row-reverse; removed for better scroll behavior */
+    height: 100%;
+    min-width: 100%;
+    width: max-content;
+}
+
+.bottom-tab {
+    flex: 1 0 100px;
+    min-width: 100px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    padding: 0 16px;
+}
+
+.bottom-tab.active {
+    color: white;
+    background-color: rgba(0,0,0,0.1);
+}
 </style>

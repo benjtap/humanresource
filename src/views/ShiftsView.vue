@@ -201,34 +201,46 @@
                <input type="text" :value="editingShift.exit" readonly class="input-box" @click="openTimeModal('exit')" />
             </div>
 
-            <!-- Calculated Daily Deduction (Read Only) from Rules -->
+            <!-- Break Input (Trigger Modal) -->
             <div class="detail-form-row">
                <label :style="{ color: calculatedRulesBreak > 0 ? '#ff5252' : '' }">הפסקה:</label>
-               <div class="input-with-unit">
+               <div class="input-with-unit" @click="openBreakModal">
                  <span class="unit-text">דק'</span>
                  <input 
                     type="number" 
-                    v-model="editingShift.break" 
-                    :readonly="calculatedRulesBreak > 0" 
-                    class="input-box" 
+                    :value="editingShift.break" 
+                    readonly 
+                    class="input-box clickable" 
                     :class="{ 'read-only-field': calculatedRulesBreak > 0 }" 
                  />
                </div>
             </div>
 
+            <!-- Extra Input (Trigger Modal) -->
             <div class="detail-form-row">
                <label>תוספת יומית:</label>
-               <div class="input-with-unit">
+               <div class="input-with-unit" @click="openExtraModal">
                  <span class="unit-text">ש"ח</span>
-                 <input type="number" :value="calculatedShiftAddition" readonly class="input-box read-only-field" />
+                 <input 
+                    type="number" 
+                    :value="editingShift.extra" 
+                    readonly 
+                    class="input-box clickable"
+                 />
                </div>
             </div>
 
+            <!-- Deduction Input (Trigger Modal) -->
             <div class="detail-form-row">
                <label>הורדה יומית:</label>
-               <div class="input-with-unit">
+               <div class="input-with-unit" @click="openDeductionModal">
                  <span class="unit-text">ש"ח</span>
-                 <input type="number" :value="calculatedShiftDeduction" readonly class="input-box read-only-field" />
+                 <input 
+                    type="number" 
+                    :value="editingShift.deduction" 
+                    readonly 
+                    class="input-box clickable"
+                 />
                </div>
             </div>
 

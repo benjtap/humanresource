@@ -46,12 +46,12 @@
 
                 <!-- Entry -->
                 <div class="col-time">
-                     <input type="time" v-model="day.entry" class="table-input time" readonly>
+                     <input type="text" v-model="day.entry" class="table-input time" readonly>
                 </div>
 
                 <!-- Exit -->
                 <div class="col-time">
-                     <input type="time" v-model="day.exit" class="table-input time" readonly>
+                     <input type="text" v-model="day.exit" class="table-input time" readonly>
                 </div>
 
                 <!-- Status (Checkbox) -->

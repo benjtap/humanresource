@@ -55,11 +55,15 @@
                 <!-- Entry/Exit -->
                 <div class="times-row">
                     <div class="time-block">
-                        <input type="text" v-model="tempEntry" class="time-input-box" placeholder="07:00">
+                        <div class="time-box clickable" @click="openTimePicker('shift-entry')">
+                            <input type="text" v-model="tempEntry" class="time-input-box" readonly>
+                        </div>
                         <span class="label-below red-label">כניסה:</span>
                     </div>
                     <div class="time-block">
-                        <input type="text" v-model="tempExit" class="time-input-box" placeholder="17:00">
+                        <div class="time-box clickable" @click="openTimePicker('shift-exit')">
+                            <input type="text" v-model="tempExit" class="time-input-box" readonly>
+                        </div>
                         <span class="label-below red-label">יציאה:</span>
                     </div>
                 </div>
@@ -97,16 +101,16 @@
 
                 <!-- Bottom Inputs -->
                 <div class="bottom-inputs">
-                    <div class="input-row">
-                        <input type="number" v-model="tempBreak" class="bottom-input">
+                    <div class="input-row" @click="openInputModal('break', tempBreak)">
+                        <input type="number" v-model="tempBreak" class="bottom-input" readonly>
                         <label>הפסקה (דק'):</label>
                     </div>
-                    <div class="input-row">
-                        <input type="number" v-model="tempExtra" class="bottom-input">
+                    <div class="input-row" @click="openInputModal('extra', tempExtra)">
+                        <input type="number" v-model="tempExtra" class="bottom-input" readonly>
                         <label>תוספת יומית (ש"ח):</label>
                     </div>
-                    <div class="input-row">
-                        <input type="number" v-model="tempDeduction" class="bottom-input">
+                    <div class="input-row" @click="openInputModal('deduction', tempDeduction)">
+                        <input type="number" v-model="tempDeduction" class="bottom-input" readonly>
                         <label>הורדה יומית (ש"ח):</label>
                     </div>
                 </div>
@@ -138,18 +142,18 @@
                 <div class="rule-inputs-row">
                     <!-- Rate -->
                     <div class="input-block">
-                        <div class="input-box">
-                            <input type="number" v-model="tempRuleRate" class="clean-input" @blur="formatRateOnBlur">
+                        <div class="input-box clickable" @click="openInputModal('rate', tempRuleRate)">
+                            <input type="number" v-model="tempRuleRate" class="clean-input" readonly>
                             <span class="unit-label">%</span>
                         </div>
                         <span class="label-below">אחוזים:</span>
-                        <span v-if="tempRuleRate < 100 && tempRuleRate > 0" class="rate-preview">(סה"כ: {{ tempRuleRate + 100 }}%)</span>
+                        <span v-if="tempRuleRate < 100 && tempRuleRate > 0" class="rate-preview">(סה"כ: {{ Number(tempRuleRate) + 100 }}%)</span>
                     </div>
 
                     <!-- Duration -->
                     <div class="input-block">
-                         <div class="input-box">
-                            <input type="text" v-model="tempRuleDuration" class="clean-input" placeholder="HH:MM">
+                         <div class="input-box clickable" @click="openTimePicker('rule-duration')">
+                            <input type="text" v-model="tempRuleDuration" class="clean-input" readonly>
                         </div>
                         <span class="label-below">שעות:</span>
                     </div>
@@ -248,6 +252,77 @@
                 <span>כללי</span>
             </button>
 
+        </div>
+    </div>
+
+    <!-- Generic Input Modal -->
+    <div v-if="isInputModalOpen" class="modal-overlay sub-modal" @click.self="closeInputModal">
+        <div class="modal-card">
+          <div class="modal-header">{{ inputModalTitle }}</div>
+          
+          <div class="modal-body">
+            <input 
+                type="number" 
+                v-model="inputModalValue" 
+                class="name-input" 
+                ref="genericInputRef"
+            />
+          </div>
+          
+          <div class="modal-footer">
+            <button class="footer-btn approve" @click="confirmInputModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                אישור
+            </button>
+            <div class="footer-divider"></div>
+            <button class="footer-btn cancel" @click="closeInputModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                ביטול
+            </button>
+          </div>
+        </div>
+    </div>
+
+    <!-- Time Picker Modal -->
+    <div v-if="isTimePickerOpen" class="modal-overlay sub-modal" @click.self="closeTimePicker">
+        <div class="modal-card">
+            <div class="modal-header">
+                {{ pickerTitle }}
+            </div>
+            
+            <div class="modal-body">
+                <div class="time-picker-container">
+                   <div class="time-column">
+                      <div class="time-cell prev" @click="adjustTime('hour', -1)">{{ prevHour }}</div>
+                      <div class="time-cell current">
+                        <input type="number" v-model="tempHour" class="time-input clean-input"/>
+                      </div>
+                      <div class="time-cell next" @click="adjustTime('hour', 1)">{{ nextHour }}</div>
+                   </div>
+                   
+                   <div class="time-colon">:</div>
+
+                   <div class="time-column">
+                      <div class="time-cell prev" @click="adjustTime('minute', -1)">{{ prevMinute }}</div>
+                      <div class="time-cell current">
+                        <input type="number" v-model="tempMinute" class="time-input clean-input"/>
+                      </div>
+                      <div class="time-cell next" @click="adjustTime('minute', 1)">{{ nextMinute }}</div>
+                   </div>
+                </div>
+            </div>
+
+             <div class="modal-footer">
+                <button class="footer-btn approve" @click="confirmTimePicker">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    אישור
+                </button>
+                 <div class="footer-divider"></div>
+                <button class="footer-btn cancel" @click="closeTimePicker">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    ביטול
+                </button>
+            </div>
         </div>
     </div>
   </div>
@@ -383,6 +458,112 @@ const saveRule = () => {
     isRuleModalOpen.value = false;
 };
 
+
+
+
+// --- Custom Modals Logic ---
+
+// Input Modal State
+const isInputModalOpen = ref(false);
+const inputModalValue = ref('');
+const inputModalTarget = ref(''); // 'break', 'extra', 'deduction', 'rate'
+const inputModalTitle = ref('');
+const genericInputRef = ref(null);
+
+const openInputModal = (target, currentValue) => {
+    inputModalTarget.value = target;
+    inputModalValue.value = currentValue;
+    
+    // Set Title
+    if (target === 'break') inputModalTitle.value = 'הפסקה (דק\')';
+    else if (target === 'extra') inputModalTitle.value = 'תוספת (ש"ח)';
+    else if (target === 'deduction') inputModalTitle.value = 'הורדה (ש"ח)';
+    else if (target === 'rate') inputModalTitle.value = 'אחוז כפל';
+    
+    isInputModalOpen.value = true;
+    nextTick(() => genericInputRef.value?.focus());
+};
+
+const closeInputModal = () => { isInputModalOpen.value = false; };
+
+const confirmInputModal = () => {
+    const val = Number(inputModalValue.value);
+    if (inputModalTarget.value === 'break') tempBreak.value = val;
+    else if (inputModalTarget.value === 'extra') tempExtra.value = val;
+    else if (inputModalTarget.value === 'deduction') tempDeduction.value = val;
+    else if (inputModalTarget.value === 'rate') tempRuleRate.value = val;
+    
+    closeInputModal();
+};
+
+// Time Picker State
+const isTimePickerOpen = ref(false);
+const pickerTarget = ref(''); // 'shift-entry', 'shift-exit', 'rule-duration'
+const pickerTitle = ref('');
+const tempHour = ref('00');
+const tempMinute = ref('00');
+
+const openTimePicker = (target) => {
+    pickerTarget.value = target;
+    let timeStr = '00:00';
+    
+    if (target === 'shift-entry') {
+        pickerTitle.value = 'זמן כניסה';
+        timeStr = tempEntry.value;
+    } else if (target === 'shift-exit') {
+        pickerTitle.value = 'זמן יציאה';
+        timeStr = tempExit.value;
+    } else if (target === 'rule-duration') {
+        pickerTitle.value = 'משך שעות';
+        timeStr = tempRuleDuration.value;
+    }
+    
+    const [h, m] = (timeStr || '00:00').split(':');
+    tempHour.value = h || '00';
+    tempMinute.value = m || '00';
+    
+    isTimePickerOpen.value = true;
+};
+
+const closeTimePicker = () => { isTimePickerOpen.value = false; };
+
+const adjustTime = (unit, delta) => {
+    if (unit === 'hour') {
+        let h = parseInt(tempHour.value);
+        h = (h + delta + 24) % 24;
+        tempHour.value = h.toString().padStart(2, '0');
+    } else {
+        let m = parseInt(tempMinute.value);
+        m = (m + delta + 60) % 60;
+        tempMinute.value = m.toString().padStart(2, '0');
+    }
+};
+
+const prevHour = computed(() => {
+    const h = parseInt(tempHour.value);
+    return ((h - 1 + 24) % 24).toString().padStart(2, '0');
+});
+const nextHour = computed(() => {
+    const h = parseInt(tempHour.value);
+    return ((h + 1) % 24).toString().padStart(2, '0');
+});
+const prevMinute = computed(() => {
+    const m = parseInt(tempMinute.value);
+    return ((m - 1 + 60) % 60).toString().padStart(2, '0');
+});
+const nextMinute = computed(() => {
+    const m = parseInt(tempMinute.value);
+    return ((m + 1) % 60).toString().padStart(2, '0');
+});
+
+const confirmTimePicker = () => {
+    const finalTime = `${tempHour.value}:${tempMinute.value}`;
+    if (pickerTarget.value === 'shift-entry') tempEntry.value = finalTime;
+    else if (pickerTarget.value === 'shift-exit') tempExit.value = finalTime;
+    else if (pickerTarget.value === 'rule-duration') tempRuleDuration.value = finalTime;
+    
+    closeTimePicker();
+};
 
 const logout = () => {
     store.dispatch('saveToken', null);
@@ -552,18 +733,18 @@ const logout = () => {
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
 }
 
 .name-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 5px;
 }
 
 .color-circle {
@@ -669,7 +850,7 @@ const logout = () => {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-top: 10px;
+    margin-top: 5px;
     border-radius: 4px;
 }
 
@@ -795,8 +976,63 @@ const logout = () => {
   display: flex;
   flex-direction: column;
 }
+
 .sidebar.open {
   transform: translateX(0);
+}
+/* Time Picker & Custom Modal Styles */
+.time-picker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    direction: ltr; /* Ensure HH:MM order */
+    padding: 20px 0;
+}
+.time-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.time-cell {
+    font-size: 1.2rem;
+    color: #ccc;
+    cursor: pointer;
+    user-select: none;
+}
+.time-cell.current {
+    font-size: 2rem;
+    color: #333;
+    font-weight: bold;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    width: 60px;
+    display: flex;
+    justify-content: center;
+}
+.time-colon {
+    font-size: 2rem;
+    font-weight: bold;
+    padding-bottom: 5px;
+}
+.time-input.clean-input {
+    font-size: 2rem;
+    width: 100%;
+    text-align: center;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.clickable {
+    cursor: pointer;
+}
+.clickable:hover {
+    background-color: #f9f9f9;
 }
 .sidebar-header {
   height: 160px;
@@ -875,7 +1111,7 @@ const logout = () => {
     text-align: right;
     font-weight: 700;
     color: #555;
-    margin-top: 10px;
+    margin-top: 5px;
 }
 
 .plus-icon {
@@ -886,8 +1122,8 @@ const logout = () => {
 .bottom-inputs {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-top: 10px;
+    gap: 8px;
+    margin-top: 5px;
 }
 
 .input-row {
@@ -941,6 +1177,7 @@ const logout = () => {
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    direction: rtl; /* Ensure RTL scrolling behavior */
 }
 .bottom-tabs-container::-webkit-scrollbar {
     display: none;
@@ -948,7 +1185,7 @@ const logout = () => {
 
 .bottom-tabs-scroll {
     display: flex;
-    flex-direction: row-reverse; /* RTL Order */
+    /* flex-direction: row-reverse; removed for better scroll behavior */
     height: 100%;
     min-width: 100%;
     width: max-content;
@@ -976,4 +1213,59 @@ const logout = () => {
     background-color: rgba(0,0,0,0.1);
 }
 
+
+/* Time Picker & Custom Modal Styles */
+.time-picker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    direction: ltr; /* Ensure HH:MM order */
+    padding: 20px 0;
+}
+.time-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.time-cell {
+    font-size: 1.2rem;
+    color: #ccc;
+    cursor: pointer;
+    user-select: none;
+}
+.time-cell.current {
+    font-size: 2rem;
+    color: #333;
+    font-weight: bold;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    width: 60px;
+    display: flex;
+    justify-content: center;
+}
+.time-colon {
+    font-size: 2rem;
+    font-weight: bold;
+    padding-bottom: 5px;
+}
+.time-input.clean-input {
+    font-size: 2rem;
+    width: 100%;
+    text-align: center;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.clickable {
+    cursor: pointer;
+}
+.clickable:hover {
+    background-color: #f9f9f9;
+}
 </style>

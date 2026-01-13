@@ -125,24 +125,24 @@
                     <!-- Break -->
                     <div class="rate-row">
                         <label style="color: #ff5252; font-weight: 500;">הפסקה (דק'):</label> <!-- Red label as per image -->
-                        <div class="input-box-wrapper">
-                            <input type="number" :value="calculatedBreak" class="rate-input read-only-field" readonly>
+                        <div class="input-box-wrapper" @click="openBreakModal">
+                            <input type="number" :value="breakTime" class="rate-input read-only-field clickable" readonly>
                         </div>
                     </div>
                     
                     <!-- Extra -->
                     <div class="rate-row">
                         <label>תוספת יומית (ש"ח):</label>
-                        <div class="input-box-wrapper">
-                            <input type="number" :value="calculatedAddition" class="rate-input read-only-field" readonly>
+                        <div class="input-box-wrapper" @click="openExtraModal">
+                            <input type="number" :value="extraAmount" class="rate-input read-only-field clickable" readonly>
                         </div>
                     </div>
 
                     <!-- Deduction -->
                     <div class="rate-row">
                         <label>הורדה יומית (ש"ח):</label>
-                        <div class="input-box-wrapper">
-                            <input type="number" :value="calculatedDeduction" class="rate-input read-only-field" readonly>
+                        <div class="input-box-wrapper" @click="openDeductionModal">
+                            <input type="number" :value="deductionAmount" class="rate-input read-only-field clickable" readonly>
                         </div>
                     </div>
                 </div>
