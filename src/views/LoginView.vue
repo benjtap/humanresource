@@ -154,7 +154,7 @@ const doInscription = async () => {
             Username: form.idNumber,
             Telephone: form.phoneNumber
         }
-        const response = await api.post('/Auth/inscription', payload)
+        const response = await api.post('/Auth/InscriptionIsrael', payload)
         
         if (response.data.succes) {
             authContext.value = 'inscription'
