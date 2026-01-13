@@ -1,8 +1,13 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import { onMounted } from 'vue'
+import api from './services/api'
 
 onMounted(() => {
+  // Wake up Render Backend (Free Tier Cold Start) - Fire and forget
+  // This helps start the server while the user enters credentials
+  api.get('/').catch(() => { /* Ignore errors, just waking up */ });
+
   // Tente de passer en plein écran dès la première interaction (clic) de l'utilisateur
   // Les navigateurs bloquent le plein écran automatique sans interaction pour sécurité.
   const goFullScreen = () => {
