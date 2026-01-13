@@ -41,17 +41,7 @@
           <span v-else>המשך</span>
         </button>
         
-        <div class="mode-toggle-container">
-            <label class="toggle-switch">
-                <input type="checkbox" :checked="isMockMode" @change="toggleMode">
-                <span class="slider round"></span>
-            </label>
-            <span class="mode-label">{{ isMockMode ? 'מצב בדיקה (Mock)' : 'מצב אמת (API)' }}</span>
-        </div>
-        
-        <div style="text-align: center; margin-top: 10px;">
-             <a href="#" @click.prevent="fillMockData" style="color: #666; font-size: 0.8rem;">מלא נתוני בדיקה (050...)</a>
-        </div>
+
       </form>
     </div>
 
@@ -108,23 +98,12 @@ const form = reactive({
   phoneNumber: ''
 })
 
-const isMockMode = computed(() => store.getters.isMockMode);
 
-const toggleMode = () => {
-    store.commit('TOGGLE_MOCK_MODE');
-};
 
 const handleIdentityCheck = async () => {
   isLoading.value = true
   
-  if (isMockMode.value) {
-      // Direct Mock Login
-      setTimeout(() => {
-          bypassLogin();
-          isLoading.value = false;
-      }, 500);
-      return;
-  }
+
 
   try {
     // 1. Tenter la Connexion d'abord (Si vérifié -> Token direct)
@@ -253,26 +232,7 @@ const handleCodeVerification = async () => {
 }
 
 
-const bypassLogin = () => {
-    // Generate fake token
-    const fakeToken = 'mock-token-' + Date.now();
-    const fakeUser = {
-        Id: 'mock-user-id',
-        Username: 'DemoUser',
-        Telephone: '0500000000',
-        TelephoneVerifie: true
-    };
-    
-    store.dispatch('saveToken', fakeToken);
-    store.commit('SET_USER', fakeUser);
-    
-    router.push({ name: 'shifts' });
-};
 
-const fillMockData = () => {
-    form.idNumber = '111111111';
-    form.phoneNumber = '0500000000';
-};
 
 const simulateSmsReceived = () => {
     verificationCode.value = '123456';

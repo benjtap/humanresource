@@ -19,6 +19,11 @@
     <div class="content-scroll">
         <div class="settings-list">
             
+            <!-- Action Buttons (Moved to Top) -->
+            <div class="action-footer" style="padding: 20px 20px 0 20px; box-shadow: none; background: transparent;">
+                <button class="action-button update" @click="saveChanges">עדכן</button>
+                <button class="action-button cancel" @click="cancelChanges">ביטול</button>
+            </div>
             <!-- Income Tax Exemption -->
             <div class="setting-card">
                 <div class="setting-main">
@@ -28,7 +33,7 @@
                     </div>
                     <div class="setting-control">
                         <label class="switch">
-                            <input type="checkbox" v-model="isIncomeTaxExempt">
+                            <input type="checkbox" v-model="form.isIncomeTaxExempt">
                             <span class="slider round"></span>
                         </label>
                     </div>
@@ -47,7 +52,7 @@
                     <div class="setting-control center-control">
                          <div class="counter-wrapper">
                              <button class="counter-btn" @click="updateCreditPoints(-0.25)">-</button>
-                             <span class="counter-value">{{ creditPoints.toFixed(2) }}</span>
+                             <span class="counter-value">{{ form.creditPoints.toFixed(2) }}</span>
                              <button class="counter-btn" @click="updateCreditPoints(0.25)">+</button>
                          </div>
                     </div>
@@ -65,7 +70,7 @@
                          </div>
                          <div class="setting-control-checkbox">
                              <span class="checkbox-label">חישוב קבוע מבוסיס 182 שעות</span>
-                            <input type="checkbox" v-model="isStudyFundFixed182" class="checkbox-box">
+                            <input type="checkbox" v-model="form.isStudyFundFixed182" class="checkbox-box">
                          </div>
                     </div>
                     <div class="setting-desc full-width">נא להכניס אחוזים לקרן השתלמות (0% אומר שלא יחושב קרן השתלמות)</div>
@@ -73,7 +78,7 @@
                     <div class="setting-control center-control mt-2">
                          <div class="counter-wrapper">
                              <button class="counter-btn" @click="updateStudyFund(-1)">-</button>
-                             <span class="counter-value">{{ studyFund }}</span>
+                             <span class="counter-value">{{ form.studyFund }}</span>
                              <button class="counter-btn" @click="updateStudyFund(1)">+</button>
                          </div>
                     </div>
@@ -91,7 +96,7 @@
                          </div>
                          <div class="setting-control-checkbox">
                              <span class="checkbox-label">חישוב קבוע מבוסיס 182 שעות</span>
-                            <input type="checkbox" v-model="isPensionFundFixed182" class="checkbox-box">
+                            <input type="checkbox" v-model="form.isPensionFundFixed182" class="checkbox-box">
                          </div>
                     </div>
                     <div class="setting-desc full-width">נא להכניס אחוזים לקרן פנסיה</div>
@@ -99,7 +104,7 @@
                     <div class="setting-control center-control mt-2">
                          <div class="counter-wrapper">
                              <button class="counter-btn" @click="updatePensionFund(-1)">-</button>
-                             <span class="counter-value">{{ pensionFund }}</span>
+                             <span class="counter-value">{{ form.pensionFund }}</span>
                              <button class="counter-btn" @click="updatePensionFund(1)">+</button>
                          </div>
                     </div>
@@ -117,7 +122,7 @@
                     </div>
                     <div class="setting-control">
                         <label class="switch">
-                            <input type="checkbox" v-model="isNationalInsuranceExempt">
+                            <input type="checkbox" v-model="form.isNationalInsuranceExempt">
                             <span class="slider round"></span>
                         </label>
                     </div>
@@ -135,7 +140,7 @@
                     </div>
                     <div class="setting-control">
                         <label class="switch">
-                            <input type="checkbox" v-model="isHealthTaxExempt">
+                            <input type="checkbox" v-model="form.isHealthTaxExempt">
                             <span class="slider round"></span>
                         </label>
                     </div>
@@ -153,12 +158,14 @@
                     </div>
                     <div class="setting-control">
                         <label class="switch">
-                            <input type="checkbox" v-model="isShiftTaxCredit">
+                            <input type="checkbox" v-model="form.isShiftTaxCredit">
                             <span class="slider round"></span>
                         </label>
                     </div>
                 </div>
             </div>
+
+
 
         </div>
     </div>
@@ -236,14 +243,32 @@
                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 <span>מס הכנסה</span>
             </button>
+            <button class="bottom-tab" @click="$router.push('/general-settings')">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>כללי</span>
+            </button>
 
         </div>
     </div>
+
+    <!-- Toast Notification -->
+    <transition name="fade-fast">
+        <div v-if="toastVisible" class="toast-notification">
+            <div class="toast-content" :class="toastType">
+                <div class="toast-icon-wrapper">
+                    <svg v-if="toastType === 'success'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </div>
+                <div class="toast-text">{{ toastMessage }}</div>
+            </div>
+        </div>
+    </transition>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 
@@ -252,54 +277,86 @@ const router = useRouter();
 
 const isMenuOpen = ref(false);
 
-const isIncomeTaxExempt = computed({
-    get: () => store.getters.taxIsIncomeTaxExempt,
-    set: (val) => store.dispatch('updateTaxSetting', { key: 'isIncomeTaxExempt', value: val })
+// Toast Logic
+const toastVisible = ref(false);
+const toastMessage = ref('');
+const toastType = ref('success'); // 'success' or 'error'
+
+const showToast = (message, type = 'success') => {
+    toastMessage.value = message;
+    toastType.value = type;
+    toastVisible.value = true;
+    setTimeout(() => {
+        toastVisible.value = false;
+    }, 3000);
+};
+
+const form = reactive({
+    isIncomeTaxExempt: false,
+    creditPoints: 2.25,
+    studyFund: 0,
+    isStudyFundFixed182: false,
+    pensionFund: 0,
+    isPensionFundFixed182: false,
+    isNationalInsuranceExempt: false,
+    isHealthTaxExempt: false,
+    isShiftTaxCredit: false
 });
 
-const isNationalInsuranceExempt = computed({
-    get: () => store.getters.taxIsNationalInsuranceExempt,
-    set: (val) => store.dispatch('updateTaxSetting', { key: 'isNationalInsuranceExempt', value: val })
+const initForm = () => {
+    form.isIncomeTaxExempt = store.getters.taxIsIncomeTaxExempt;
+    form.creditPoints = store.getters.taxCreditPoints;
+    form.studyFund = store.getters.taxStudyFund;
+    form.isStudyFundFixed182 = store.getters.taxIsStudyFundFixed182;
+    form.pensionFund = store.getters.taxPensionFund;
+    form.isPensionFundFixed182 = store.getters.taxIsPensionFundFixed182;
+    form.isNationalInsuranceExempt = store.getters.taxIsNationalInsuranceExempt;
+    form.isHealthTaxExempt = store.getters.taxIsHealthTaxExempt;
+    form.isShiftTaxCredit = store.getters.taxIsShiftTaxCredit;
+};
+
+onMounted(() => {
+    initForm();
 });
 
-const isHealthTaxExempt = computed({
-    get: () => store.getters.taxIsHealthTaxExempt,
-    set: (val) => store.dispatch('updateTaxSetting', { key: 'isHealthTaxExempt', value: val })
-});
-
-const isShiftTaxCredit = computed({
-    get: () => store.getters.taxIsShiftTaxCredit,
-    set: (val) => store.dispatch('updateTaxSetting', { key: 'isShiftTaxCredit', value: val })
-});
-
-const creditPoints = computed(() => store.getters.taxCreditPoints);
 const updateCreditPoints = (delta) => {
-    const newVal = Math.max(0, creditPoints.value + delta);
-    store.dispatch('updateTaxCreditPoints', newVal);
+    form.creditPoints = Math.max(0, form.creditPoints + delta);
 };
 
-const studyFund = computed(() => store.getters.taxStudyFund);
 const updateStudyFund = (delta) => {
-    const newVal = Math.max(0, studyFund.value + delta);
-    store.dispatch('updateTaxSetting', { key: 'studyFund', value: newVal });
+    form.studyFund = Math.max(0, form.studyFund + delta);
 };
 
-const isStudyFundFixed182 = computed({
-    get: () => store.getters.taxIsStudyFundFixed182,
-    set: (val) => store.dispatch('updateTaxSetting', { key: 'isStudyFundFixed182', value: val })
-});
-
-const pensionFund = computed(() => store.getters.taxPensionFund);
 const updatePensionFund = (delta) => {
-    const newVal = Math.max(0, pensionFund.value + delta);
-    store.dispatch('updateTaxSetting', { key: 'pensionFund', value: newVal });
+    form.pensionFund = Math.max(0, form.pensionFund + delta);
 };
 
-const isPensionFundFixed182 = computed({
-    get: () => store.getters.taxIsPensionFundFixed182,
-    set: (val) => store.dispatch('updateTaxSetting', { key: 'isPensionFundFixed182', value: val })
-});
+const saveChanges = async () => {
+    try {
+        // Commit all changes to store
+        // We use Commit instead of Dispatch to avoid triggering individual saves if using the existing actions.
+        store.commit('SET_TAX_SETTING', { key: 'isIncomeTaxExempt', value: form.isIncomeTaxExempt });
+        store.commit('SET_TAX_CREDIT_POINTS', form.creditPoints);
+        store.commit('SET_TAX_SETTING', { key: 'studyFund', value: form.studyFund });
+        store.commit('SET_TAX_SETTING', { key: 'isStudyFundFixed182', value: form.isStudyFundFixed182 });
+        store.commit('SET_TAX_SETTING', { key: 'pensionFund', value: form.pensionFund });
+        store.commit('SET_TAX_SETTING', { key: 'isPensionFundFixed182', value: form.isPensionFundFixed182 });
+        store.commit('SET_TAX_SETTING', { key: 'isNationalInsuranceExempt', value: form.isNationalInsuranceExempt });
+        store.commit('SET_TAX_SETTING', { key: 'isHealthTaxExempt', value: form.isHealthTaxExempt });
+        store.commit('SET_TAX_SETTING', { key: 'isShiftTaxCredit', value: form.isShiftTaxCredit });
 
+        // Now dispatch a single save
+        await store.dispatch('saveAllSettings');
+        showToast("הגדרות נשמרו בהצלחה", 'success');
+    } catch (e) {
+        console.error("Failed to save settings", e);
+        showToast("שגיאה בשמירת הגדרות", 'error');
+    }
+};
+
+const cancelChanges = () => {
+    initForm();
+};
 
 const logout = () => {
     store.dispatch('saveToken', null);
@@ -310,6 +367,59 @@ const logout = () => {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+
+/* Toast Styles */
+.toast-notification {
+    position: fixed;
+    bottom: 90px; /* Above bottom nav */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5000;
+}
+
+.toast-content {
+    background-color: white;
+    border-radius: 50px;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    direction: rtl;
+    min-width: 280px;
+    justify-content: space-between;
+}
+
+.toast-content.success .toast-icon-wrapper {
+    color: #4CAF50;
+}
+
+.toast-content.error .toast-icon-wrapper {
+    color: #F44336;
+}
+
+.toast-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.fade-fast-enter-active,
+.fade-fast-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-fast-enter-from,
+.fade-fast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 10px);
+}
 
 .page-container {
   font-family: 'Heebo', sans-serif;
@@ -364,6 +474,7 @@ const logout = () => {
 .settings-list {
     display: flex;
     flex-direction: column;
+    padding-bottom: 80px; /* Space for footer */
 }
 
 .setting-card {
@@ -578,6 +689,37 @@ input:checked + .slider:before {
     margin-top: 20px;
 }
 
+/* Action Footer */
+.action-footer {
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    background-color: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+
+.action-button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    max-width: 200px;
+}
+
+.action-button.update {
+    background-color: #5ab9c9;
+    color: white;
+}
+
+.action-button.cancel {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
 /* Sidebar Styles (Copy for consistency) */
 .sidebar-overlay {
   position: fixed;
@@ -732,17 +874,23 @@ input:checked + .slider:before {
     align-items: center;
     overflow-x: auto; /* Scrollable horizontal */
     white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.bottom-tabs-container::-webkit-scrollbar {
+    display: none;
 }
 
 .bottom-tabs-scroll {
     display: flex;
     flex-direction: row-reverse; /* RTL Order */
     height: 100%;
-    width: 100%;
+    min-width: 100%;
+    width: max-content;
 }
 
 .bottom-tab {
-    flex: 1;
+    flex: 1 0 100px;
     min-width: 100px;
     background: none;
     border: none;
@@ -755,6 +903,7 @@ input:checked + .slider:before {
     font-size: 0.9rem;
     cursor: pointer;
     border-left: 1px solid rgba(255,255,255,0.1);
+    padding: 0 16px; 
 }
 
 .bottom-tab.active {

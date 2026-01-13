@@ -2,12 +2,14 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import { setupInterceptors } from './services/api'
 import './style.css' // Import global styles if available, or create them
 
 const app = createApp(App)
 
 app.use(store)
 app.use(router)
+setupInterceptors(store)
 
 // CRITICAL: Restore token from localStorage if vuex-persistedstate didn't sync it yet
 // This handles the migration from manual storage to persisted state

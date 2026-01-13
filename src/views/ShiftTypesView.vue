@@ -59,8 +59,8 @@
             <div class="modal-body">
                 <!-- Name and Color Row -->
                 <div class="name-color-row">
-                    <div class="name-input-wrapper">
-                         <input type="text" v-model="shiftName" class="name-input">
+                    <div class="name-input-wrapper" @click="openNameModal">
+                         <input type="text" v-model="shiftName" class="name-input" readonly>
                     </div>
                     <div class="name-label">שם המשמרת:</div>
                 </div>
@@ -90,25 +90,24 @@
                      
                      <div v-for="(rate, index) in rates" :key="index" class="rate-item-row" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                         <!-- Limit (Time) -->
-                        <div class="time-box-small" @click="openTimePicker('rate', index)" style="background: white; border: 1px solid #ccc; border-radius: 4px; padding: 0 10px; height: 38px; width: 80px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                             <input type="text" :value="rate.limit" class="time-input-native" readonly style="border: none; background: transparent; width: 100%; text-align: center; font-size: 1rem; color: #333; font-family: inherit; cursor: pointer;">
+                        <div class="time-box-small" @click="openTimePicker('rate', index)">
+                             <input type="text" :value="rate.limit" class="time-input-native" readonly>
                         </div>
                         
                         <!-- Percentage -->
-                        <div class="percentage-box-wrapper" style="position: relative; width: 80px; height: 38px;">
-                             <input type="number" v-model="rate.value" class="percentage-input" style="width: 100%; height: 100%; padding: 0 10px; border: 1px solid #ccc; border-radius: 4px; background: white; text-align: center; font-size: 1rem; color: #333;">
-                             <span class="percent-sign" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #888; font-size: 0.8rem;">%</span>
+                        <div class="percentage-box-wrapper" @click="openRateModal(index)">
+                             <input type="number" :value="rate.value" class="percentage-input" readonly>
+                             <span class="percent-sign">%</span>
                         </div>
 
-                        <!-- Actions (Edit/Delete) -->
-                         <div class="rate-actions" style="display: flex; gap: 5px;">
-                             <!-- Edit (Trigger Time Picker) -->
-                             <button class="action-icon-btn edit" @click="openTimePicker('rate', index)" style="background: none; border: none; cursor: pointer; color: #999; padding: 5px;">
+                         <!-- Actions (Edit/Delete) -->
+                         <div class="rate-actions">
+                             <!-- Edit (Visual cue, inputs are clickable) -->
+                             <button class="action-icon-btn edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                              </button>
-
                              <!-- Delete -->
-                             <button class="action-icon-btn delete" @click="removeRate(index)" style="background: none; border: none; cursor: pointer; color: #999; padding: 5px;">
+                             <button class="action-icon-btn delete" @click="removeRate(index)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                              </button>
                          </div>
@@ -125,25 +124,25 @@
                 <div class="rate-rows">
                     <!-- Break -->
                     <div class="rate-row">
-                        <label>הפסקה (דק'):</label>
-                        <div class="input-box-wrapper" @click="openBreakModal">
-                            <input type="number" v-model="breakTime" class="rate-input" readonly>
+                        <label style="color: #ff5252; font-weight: 500;">הפסקה (דק'):</label> <!-- Red label as per image -->
+                        <div class="input-box-wrapper">
+                            <input type="number" :value="calculatedBreak" class="rate-input read-only-field" readonly>
                         </div>
                     </div>
                     
                     <!-- Extra -->
                     <div class="rate-row">
                         <label>תוספת יומית (ש"ח):</label>
-                        <div class="input-box-wrapper" @click="openExtraModal">
-                            <input type="number" v-model="extraAmount" class="rate-input" readonly>
+                        <div class="input-box-wrapper">
+                            <input type="number" :value="calculatedAddition" class="rate-input read-only-field" readonly>
                         </div>
                     </div>
 
                     <!-- Deduction -->
                     <div class="rate-row">
                         <label>הורדה יומית (ש"ח):</label>
-                        <div class="input-box-wrapper" @click="openDeductionModal">
-                            <input type="number" v-model="deductionAmount" class="rate-input" readonly>
+                        <div class="input-box-wrapper">
+                            <input type="number" :value="calculatedDeduction" class="rate-input read-only-field" readonly>
                         </div>
                     </div>
                 </div>
@@ -163,6 +162,54 @@
                     ביטול
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Name Modal -->
+    <div v-if="isNameModalOpen" class="input-modal-overlay" @click.self="cancelNameModal">
+        <div class="input-modal">
+          <div class="input-modal-title">שם המשמרת</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+            <p class="input-instruction">נא להכניס שם משמרת</p>
+            <input 
+                type="text" 
+                v-model="nameModalValue" 
+                class="modal-input" 
+                placeholder="שם המשמרת"
+                ref="nameInputRef"
+            />
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmNameModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelNameModal">ביטול</button>
+          </div>
+        </div>
+    </div>
+
+    <!-- Rate (Percentage) Modal -->
+    <div v-if="isRateModalOpen" class="input-modal-overlay" @click.self="cancelRateModal">
+        <div class="input-modal">
+          <div class="input-modal-title">תעריף</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+            <p class="input-instruction">נא להכניס אחוז תעריף</p>
+            <input 
+                type="number" 
+                v-model="rateModalValue" 
+                class="modal-input" 
+                placeholder="%"
+                ref="rateInputRef"
+            />
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmRateModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelRateModal">ביטול</button>
+          </div>
         </div>
     </div>
 
@@ -380,7 +427,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -390,6 +437,23 @@ const router = useRouter(); // For logout redirect
 const shiftTypes = computed(() => store.getters.allShiftTypes); // Reactive from store
 
 const isMenuOpen = ref(false);
+
+const checkAndRepairData = async () => {
+    await store.dispatch('fetchAdditionsDeductions');
+    
+    // Check if fixed break exists in store, if not force repair immediately
+    const rules = store.getters.allAdditionsDeductions || [];
+    const hasFixedBreak = rules.some(r => r.isFixedBreakAuto || r.description?.includes('הפסקה'));
+    
+    if (!hasFixedBreak) {
+        console.log("Quick Repair: no fixed break found in view, triggering repair.");
+        await store.dispatch('forceRepairFixedBreak');
+    }
+};
+
+onMounted(() => {
+    checkAndRepairData();
+});
 
 const logout = () => {
     store.dispatch('saveToken', null);
@@ -405,6 +469,101 @@ const defaultExit = ref('16:15');
 const breakTime = ref(0);
 const extraAmount = ref(0);
 const deductionAmount = ref(0);
+
+// Name Modal Logic
+const isNameModalOpen = ref(false);
+const nameModalValue = ref('');
+const nameInputRef = ref(null);
+
+const allRules = computed(() => store.getters.allAdditionsDeductions || []);
+
+const currentShiftId = computed(() => editingTypeId.value);
+
+const calculatedBreak = computed(() => {
+    // Robust calculation
+    const rules = allRules.value.filter(r => {
+        // Check for time-based: 'deduction' + 'time' mode OR legacy 'break' type OR has minutes
+        const isTimeBased = (r.type === 'deduction' && r.mode === 'time') || 
+                            r.type === 'break' || 
+                            (r.minutes && r.minutes > 0);
+        
+        if (!isTimeBased) return false;
+
+        // Shift Scope Check
+        const ruleShiftIds = r.shiftIds || []; // Ensure array
+        
+        // Global rule (applies to all)
+        if (ruleShiftIds.length === 0) return true;
+
+        // Specific rule (applies if current shift ID matches)
+        if (currentShiftId.value) {
+            // Loose comparison (string/number)
+            return ruleShiftIds.some(id => String(id) === String(currentShiftId.value));
+        }
+
+        return false;
+    });
+
+    const sum = rules.reduce((sum, r) => {
+        const val = Number(r.minutes || r.amount || 0);
+        return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+    
+    return sum;
+});
+
+const calculatedAddition = computed(() => {
+    const rules = allRules.value.filter(r => 
+        (r.type === 'addition') && 
+        (r.mode === 'amount') &&
+        (r.period === 'daily') &&
+        (r.shiftIds.length === 0 || (currentShiftId.value && r.shiftIds.includes(currentShiftId.value)))
+    );
+    return rules.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+});
+
+const calculatedDeduction = computed(() => {
+    const rules = allRules.value.filter(r => 
+        (r.type === 'deduction') && 
+        (r.mode === 'amount') &&
+        (r.period === 'daily') &&
+        (r.shiftIds.length === 0 || (currentShiftId.value && r.shiftIds.includes(currentShiftId.value)))
+    );
+    return rules.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+});
+
+const openNameModal = () => {
+    nameModalValue.value = shiftName.value;
+    isNameModalOpen.value = true;
+    nextTick(() => nameInputRef.value?.focus());
+};
+const confirmNameModal = () => {
+    shiftName.value = nameModalValue.value;
+    isNameModalOpen.value = false;
+};
+const cancelNameModal = () => { isNameModalOpen.value = false; };
+
+
+
+// Rate Modal Logic
+const isRateModalOpen = ref(false);
+const rateModalValue = ref('');
+const rateInputRef = ref(null);
+const currentRateIndex = ref(null);
+
+const openRateModal = (index) => {
+    currentRateIndex.value = index;
+    rateModalValue.value = rates.value[index].value;
+    isRateModalOpen.value = true;
+    nextTick(() => rateInputRef.value?.focus());
+};
+const confirmRateModal = () => {
+    if (currentRateIndex.value !== null) {
+        rates.value[currentRateIndex.value].value = rateModalValue.value;
+    }
+    isRateModalOpen.value = false;
+};
+const cancelRateModal = () => { isRateModalOpen.value = false; };
 
 // Break Modal Logic... (Keep existing)
 // ... (Lines 185-285 are largely modal logic, keeping them as is by targeting around line 408)
@@ -1007,10 +1166,47 @@ const closeTimePicker = () => {
 .btn-icon { stroke-width: 2.5; }
 
 /* Modal Styling */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-.modal-card { background: white; width: 100%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
-.modal-header { background-color: #4DB6CD; color: white; text-align: center; padding: 12px; font-size: 1.1rem; font-weight: 500; }
-.modal-body { padding: 20px; text-align: center; background: #fff; border-bottom: 1px solid #eee; }
+.modal-overlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background-color: rgba(0,0,0,0.6); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 1000; 
+    padding: 20px; 
+}
+
+.modal-card { 
+    background: white; 
+    width: 90%; 
+    max-width: 400px; /* Matched AdditionsDeductionsView */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+    display: flex; 
+    flex-direction: column; 
+    border-radius: 8px; /* Ensure radius */
+    overflow: hidden; /* For header/footer radius */
+    max-height: 90vh; /* Safety */
+}
+
+.modal-header { 
+    background-color: #4DB6CD; 
+    color: white; 
+    text-align: center; 
+    padding: 15px; 
+    font-size: 1.2rem; 
+    font-weight: 500; 
+}
+
+.modal-body { 
+    padding: 20px; 
+    text-align: center; 
+    background: #fff; 
+    overflow-y: auto;
+}
 
 /* Times Row */
 .timings-row {
@@ -1028,14 +1224,77 @@ const closeTimePicker = () => {
     align-items: center;
 }
 
-.time-box {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 10px;
-    width: 100%;
-    margin-bottom: 5px;
+.time-box-small {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0 10px;
+    height: 38px;
+    width: 80px;
     display: flex;
+    align-items: center;
     justify-content: center;
+    cursor: pointer;
+}
+
+.time-box-small .time-input-native {
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: center;
+    font-size: 1rem;
+    color: #333;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+
+/* Percentage Input Styles */
+.percentage-box-wrapper {
+    position: relative;
+    width: 80px;
+    height: 38px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.percentage-input {
+    width: 100%;
+    height: 100%;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 1rem;
+    color: #333;
+    outline: none;
+    font-family: inherit;
+}
+
+.percent-sign {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.rate-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.action-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    padding: 5px;
 }
 
 
@@ -1101,6 +1360,7 @@ const closeTimePicker = () => {
 .modal-footer {
     display: flex;
     height: 50px;
+    direction: rtl;
 }
 
 .footer-btn {
@@ -1117,8 +1377,18 @@ const closeTimePicker = () => {
     font-weight: 500;
 }
 
-.footer-btn.approve { background-color: #00ACC1; }
-.footer-btn.cancel { background-color: #00ACC1; border-right: 1px solid rgba(0,0,0,0.1); }
+.footer-btn.approve { 
+    background-color: #00ACC1; 
+    border-left: 1px solid rgba(255,255,255,0.3); /* Divider left of approve in RTL */
+}
+.footer-btn.cancel { 
+    background-color: #00ACC1; 
+}
+.footer-divider {
+    width: 1px;
+    background-color: rgba(255,255,255,0.3);
+    display: none; /* Handled by border on button or flex gap if needed */
+}
 
 /* --- Picker Specific Styles --- */
 .picker-overlay {
@@ -1292,19 +1562,20 @@ const closeTimePicker = () => {
 .input-modal {
   background: white;
   width: 85%;
-  max-width: 340px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  max-width: 300px; /* Matched image proportions */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
   padding: 0; 
   position: relative;
   background-color: white;
+  border-radius: 2px;
 }
 
 .input-modal-title {
   color: #29B6F6; /* Light Blue */
-  font-size: 1.6rem;
-  font-weight: 400;
+  font-size: 1.4rem;
+  font-weight: 500;
   padding: 20px 20px 10px 20px;
   text-align: right;
 }
@@ -1316,12 +1587,12 @@ const closeTimePicker = () => {
 }
 
 .input-modal-body {
-    padding: 20px;
+    padding: 25px 20px;
 }
 
 .input-instruction {
   color: #333;
-  margin: 0 0 30px 0;
+  margin: 0 0 15px 0;
   font-size: 1rem;
   text-align: right;
 }
@@ -1329,6 +1600,7 @@ const closeTimePicker = () => {
 .modal-input {
   width: 100%;
   border: none;
+  border-bottom: 2px solid #29B6F6; /* Blue Underline from image */
   font-size: 1.1rem;
   padding: 8px 0;
   outline: none;
@@ -1344,16 +1616,13 @@ const closeTimePicker = () => {
 }
 
 .input-line {
-  height: 2px;
-  background-color: #29B6F6;
-  width: 100%;
-  margin-top: 0;
-  margin-bottom: 20px;
+  display: none; /* Hidden, using border-bottom on input */
 }
 
 .input-modal-footer {
   display: flex;
   border-top: 1px solid #eee;
+  direction: rtl;
 }
 
 .modal-btn {
@@ -1365,15 +1634,29 @@ const closeTimePicker = () => {
   cursor: pointer;
   color: #333;
   transition: background 0.2s;
+  font-weight: 500;
 }
 
 .modal-btn.confirm {
-    border-left: 1px solid #eee; 
-    font-weight: 500;
+    border-left: 1px solid #eee; /* Divider */
 }
 
 .modal-btn:active {
     background-color: #f5f5f5;
 }
+.action-icon-btn.delete {
+    color: #ff5252;
+}
 
+.action-icon-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.read-only-field {
+    background-color: #e9ecef !important; /* Darker grey to be obvious */
+    color: #495057;
+    border-color: #ced4da;
+    pointer-events: none;
+    font-weight: bold; /* Make the value pop */
+}
 </style>

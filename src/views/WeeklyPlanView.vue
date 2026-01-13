@@ -46,12 +46,12 @@
 
                 <!-- Entry -->
                 <div class="col-time">
-                     <input type="time" v-model="day.entry" class="table-input time" @input="day.isActive = true" @change="validateTimes(index)">
+                     <input type="time" v-model="day.entry" class="table-input time" readonly>
                 </div>
 
                 <!-- Exit -->
                 <div class="col-time">
-                     <input type="time" v-model="day.exit" class="table-input time" @input="day.isActive = true" @change="validateTimes(index)">
+                     <input type="time" v-model="day.exit" class="table-input time" readonly>
                 </div>
 
                 <!-- Status (Checkbox) -->
@@ -88,7 +88,7 @@
         <div class="modal-card">
             <div class="modal-title">נא לבחור סוג משמרת</div>
             <div class="modal-list">
-                <div v-for="type in mockShiftTypes" :key="type.id" class="modal-item" @click="selectShift(type.name)">
+                <div v-for="type in allShiftTypes" :key="type.id" class="modal-item" @click="selectShift(type.name)">
                      <label class="radio-label">
                         <span class="type-name">{{ type.name }}</span>
                         <input type="radio" name="shiftType" :value="type.name" :checked="selectedDayIndex !== null && currentPlan.length > 0 && currentPlan[selectedDayIndex].shiftName === type.name">

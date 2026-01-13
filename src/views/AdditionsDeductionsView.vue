@@ -26,75 +26,9 @@
             </p>
         </div>
 
-        <!-- Form Card -->
-        <div class="form-card">
-            <!-- Type -->
-            <div class="form-row">
-                <label>סוג:</label>
-                <div class="input-wrapper">
-                    <input type="text" :value="typeLabel" class="form-input" readonly @click="isTypeModalOpen = true">
-                </div>
-            </div>
-
-            <!-- Period -->
-            <div class="form-row">
-                <label>תקופה:</label>
-                <div class="input-wrapper">
-                    <input type="text" :value="periodLabel" class="form-input" readonly @click="isPeriodModalOpen = true">
-                </div>
-            </div>
-
-            <!-- Description -->
-            <div class="form-row">
-                <label>תאור:</label>
-                <div class="input-wrapper">
-                    <input type="text" v-model="form.description" class="form-input" placeholder="">
-                </div>
-            </div>
-
-            <!-- Time (Minutes) -->
-            <div class="form-row">
-                <label>זמן:</label>
-                <div class="input-wrapper with-suffix">
-                     <input type="radio" value="time" v-model="form.mode" class="mode-radio">
-                     <input type="number" v-model="form.minutes" class="form-input" :disabled="form.mode !== 'time'" placeholder="0">
-                     <span class="suffix">דק'</span>
-                </div>
-            </div>
-
-            <!-- Amount -->
-            <div class="form-row">
-                <label>סכום:</label>
-                <div class="input-wrapper with-suffix">
-                    <input type="radio" value="amount" v-model="form.mode" class="mode-radio">
-                    <input type="number" v-model="form.amount" class="form-input" :disabled="form.mode !== 'amount'">
-                    <span class="suffix">ש"ח</span>
-                </div>
-            </div>
-
-            <!-- Shift Scope -->
-            <div class="form-row">
-                <label>משמרת:</label>
-                <div class="input-wrapper">
-                    <select v-model="form.shiftId" class="form-input">
-                        <option :value="null">כל המשמרות</option>
-                        <option v-for="shift in shiftTypes" :key="shift.id" :value="shift.id">
-                            {{ shift.name }}
-                        </option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Buttons -->
-            <div class="form-actions">
-                <button class="action-btn add" @click="addItem">הוסף</button>
-                <button class="action-btn reset" @click="resetForm">איפוס</button>
-            </div>
-        </div>
-
         <!-- List of Items -->
         <div class="items-list">
-             <div v-for="item in items" :key="item.id" class="list-item" @click="confirmDelete(item)">
+             <div v-for="item in items" :key="item.id" class="list-item" @click="editItem(item)">
                  <div class="item-icon" :class="item.type">
                      <!-- Icon depending on type -->
                      <svg v-if="item.type === 'addition'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -104,7 +38,7 @@
                      <div class="item-title">{{ item.description || getItemLabel(item.type) }}</div>
                      <div class="item-subtitle">
                          {{ getPeriodLabel(item.period) }} | 
-                         {{ getShiftName(item.shiftId) }}
+                         {{ getShiftName(item.shiftIds || item.shiftId) }}
                      </div>
                  </div>
                  <div class="item-amount" :class="item.type">
@@ -120,6 +54,118 @@
 
     </div>
 
+    <!-- Bottom Action Area (New Item Button) -->
+    <div class="bottom-action-area">
+        <button class="new-item-btn" @click="openFormModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+             הוספה / הורדה חדשה
+        </button>
+    </div>
+
+    <!-- Main Form Modal -->
+    <div v-if="isFormModalOpen" class="modal-overlay">
+        <div class="modal-card">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h3>הוספה / הורדה</h3>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <!-- Type -->
+                <div class="form-row" @click="openTypeModal">
+            <label>סוג:</label>
+            <div class="input-wrapper select-arrow">
+                <span class="form-value">{{ getTypeLabel(form.type) }}</span>
+            </div>
+        </div>
+
+        <!-- Mode Selection (Only for Deduction) -->
+        <div class="form-row" v-if="form.type === 'deduction' || form.type === 'addition'"> 
+            <!-- Allow time mode for Addition too? Usually only deduction (break). 
+                 User said "Mets Hafsaka comme une Horda". 
+                 Let's stick to Deduction. -->
+            <label>יחידה:</label>
+             <div class="mode-toggle" @click.stop="toggleMode">
+                <span :class="{ active: form.mode !== 'time' }">ש"ח</span>
+                <span class="separator">/</span>
+                <span :class="{ active: form.mode === 'time' }">דק'</span>
+            </div>
+        </div>
+    
+                <!-- Period -->
+                <div class="form-row">
+                    <label>תקופה:</label>
+                    <div class="input-wrapper">
+                        <input type="text" :value="periodLabel" class="form-input" readonly @click="isPeriodModalOpen = true">
+                    </div>
+                </div>
+    
+                <!-- Description -->
+                <div class="form-row">
+                    <label>תאור:</label>
+                    <div class="input-wrapper" @click="openDescriptionModal">
+                        <input type="text" :value="form.description" class="form-input" placeholder="" readonly>
+                    </div>
+                </div>
+    
+                <!-- Amount/Time -->
+                <div class="form-row">
+                    <label>{{ isTimeMode ? 'זמן:' : 'סכום:' }}</label>
+                    <div class="input-box-wrapper with-suffix" @click="openAmountModal">
+                         <!-- Using input-box-wrapper style for consistency if defined, or fallback to input-wrapper -->
+                        <div class="input-wrapper with-suffix">
+                            <input type="number" :value="form.amount" class="form-input" readonly>
+                            <span class="suffix">{{ isTimeMode ? "דק'" : 'ש"ח' }}</span>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Shift Scope -->
+                <div class="form-row">
+                    <label>משמרות:</label>
+                    <div class="input-wrapper relative">
+                        <div class="form-input dropdown-trigger" @click.stop="isShiftDropdownOpen = !isShiftDropdownOpen">
+                            {{ formattedShiftLabel }}
+                        </div>
+                        
+                        <!-- Custom Dropdown -->
+                        <div v-if="isShiftDropdownOpen" class="custom-dropdown-menu" @click.stop>
+                            <label class="dropdown-item">
+                                <input type="checkbox" :checked="isAllShiftsSelected" @change="toggleAllShifts">
+                                <span>כל המשמרות</span>
+                            </label>
+                            <div class="dropdown-divider"></div>
+                            <label v-for="shift in shiftTypes" :key="shift.id" class="dropdown-item">
+                                <input type="checkbox" :checked="form.shiftIds.includes(shift.id)" @change="toggleShift(shift.id)">
+                                <span>{{ shift.name }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button class="footer-btn approve" @click="saveItem">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    {{ isEditMode ? 'עדכן' : 'אישור' }}
+                </button>
+                <div class="footer-divider"></div>
+                <button class="footer-btn cancel" @click="closeFormModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    ביטול
+                </button>
+                <div class="footer-divider" v-if="isEditMode"></div>
+                <button v-if="isEditMode" class="footer-btn delete" @click="deleteItemFromModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    מחק
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Type Selection Modal -->
     <transition name="fade">
       <div v-if="isTypeModalOpen" class="input-modal-overlay" @click.self="isTypeModalOpen = false">
@@ -132,7 +178,7 @@
           <div class="shift-type-body">
              <label v-for="opt in typeOptions" :key="opt.value" class="shift-type-option" @click.prevent="selectType(opt.value)">
                <span class="option-label">{{ opt.label }}</span>
-               <input type="radio" :checked="form.type === opt.value" class="option-radio" readonly>
+               <input type="radio" :checked="form.type === opt.value" class="option-radio">
              </label>
           </div>
         </div>
@@ -151,12 +197,60 @@
           <div class="shift-type-body">
              <label v-for="opt in periodOptions" :key="opt.value" class="shift-type-option" @click.prevent="selectPeriod(opt.value)">
                <span class="option-label">{{ opt.label }}</span>
-               <input type="radio" :checked="form.period === opt.value" class="option-radio" readonly>
+               <input type="radio" :checked="form.period === opt.value" class="option-radio">
              </label>
           </div>
         </div>
       </div>
     </transition>
+
+    <!-- Description Modal -->
+    <div v-if="isDescriptionModalOpen" class="input-modal-overlay" @click.self="cancelDescriptionModal">
+        <div class="input-modal">
+          <div class="input-modal-title">תאור</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+            <p class="input-instruction">נא להזין תאור</p>
+            <input 
+                type="text" 
+                v-model="descriptionModalValue" 
+                class="modal-input" 
+                placeholder="תאור"
+                ref="descriptionInputRef"
+            />
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmDescriptionModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelDescriptionModal">ביטול</button>
+          </div>
+        </div>
+    </div>
+
+    <!-- Amount Modal -->
+    <div v-if="isAmountModalOpen" class="input-modal-overlay" @click.self="cancelAmountModal">
+        <div class="input-modal">
+          <div class="input-modal-title">{{ isTimeMode ? 'זמן' : 'סכום' }}</div>
+          <div class="input-title-divider"></div>
+          
+          <div class="input-modal-body">
+            <p class="input-instruction">נא להזין {{ isTimeMode ? 'זמן (דקות)' : 'סכום' }}</p>
+            <input 
+                type="number" 
+                v-model="amountModalValue" 
+                class="modal-input" 
+                placeholder="סכום"
+                ref="amountInputRef"
+            />
+          </div>
+          
+          <div class="input-modal-footer">
+            <button class="modal-btn confirm" @click="confirmAmountModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelAmountModal">ביטול</button>
+          </div>
+        </div>
+    </div>
 
     <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" v-if="isMenuOpen" @click="isMenuOpen = false"></div>
@@ -231,6 +325,10 @@
                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 <span>מס הכנסה</span>
             </button>
+            <button class="bottom-tab" @click="$router.push('/general-settings')">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>כללי</span>
+            </button>
 
         </div>
     </div>
@@ -238,7 +336,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 
@@ -253,14 +351,27 @@ const isPeriodModalOpen = ref(false);
 const shiftTypes = computed(() => store.getters.allShiftTypes);
 const items = computed(() => store.getters.allAdditionsDeductions || []); 
 
+const isFormModalOpen = ref(false);
+const isShiftDropdownOpen = ref(false);
+
+const openFormModal = () => {
+    resetForm();
+    isFormModalOpen.value = true;
+}
+const closeFormModal = () => {
+    isFormModalOpen.value = false;
+}
+
+const openTypeModal = () => {
+    isTypeModalOpen.value = true;
+};
+
 const form = reactive({
     type: 'deduction', 
     period: 'daily',   
     description: '',
     amount: 0,
-    minutes: 0,
-    mode: 'amount', // 'amount' or 'time'
-    shiftId: null 
+    shiftIds: [] // Empty array means "All Shifts"
 });
 
 const typeOptions = [
@@ -269,6 +380,13 @@ const typeOptions = [
     { value: 'net_deduction', label: 'הורדה מנטו' },
     { value: 'tax_value', label: 'שווי מס' }
 ];
+
+const getTypeLabel = (type) => {
+    const opt = typeOptions.find(o => o.value === type);
+    return opt ? opt.label : '';
+};
+
+// Removed duplicate getItemLabel
 
 const periodOptions = [
     { value: 'daily', label: 'יומי' },
@@ -295,30 +413,117 @@ const selectPeriod = (val) => {
     isPeriodModalOpen.value = false;
 };
 
-const addItem = () => {
-    // Validation
-    if (form.mode === 'amount' && form.amount <= 0) {
-        alert('נא להזין סכום');
-        return;
+const isTimeMode = computed(() => form.mode === 'time');
+
+const toggleMode = () => {
+    form.mode = form.mode === 'time' ? 'amount' : 'time';
+    form.amount = 0; // Reset value on mode change
+};
+
+// Shift Selection Logic
+const isAllShiftsSelected = computed(() => form.shiftIds.length === 0);
+
+const formattedShiftLabel = computed(() => {
+    if (isAllShiftsSelected.value) return 'כל המשמרות';
+    // Map IDs to names
+    const names = form.shiftIds.map(id => {
+        const s = shiftTypes.value.find(t => t.id === id);
+        return s ? s.name : '';
+    }).filter(Boolean);
+    
+    if (names.length === 0) return 'בחר משמרות'; // Should not happen if logic correct
+    if (names.length <= 2) return names.join(', ');
+    return `${names[0]}, ${names[1]} (+${names.length - 2})`;
+});
+
+const toggleAllShifts = () => {
+    form.shiftIds = []; // Clear to select all
+};
+
+const toggleShift = (id) => {
+    const index = form.shiftIds.indexOf(id);
+    if (index === -1) {
+        form.shiftIds.push(id);
+    } else {
+        form.shiftIds.splice(index, 1);
     }
-    if (form.mode === 'time' && form.minutes <= 0) {
-         alert('נא להזין זמן בדקות');
-         return;
+    // If user manually selects all available options, maybe reset to []? 
+    // For now, explicit selection is fine.
+};
+
+// Close dropdown when clicking outside (using window listener could be better, but we have an overlay for other menus. 
+// For this inline dropdown, we can use a simple click handler on window or just rely on the 'click.stop' on the trigger)
+// Actually, let's add a window click listener to close it.
+// Close dropdown when clicking outside
+const closeDropdown = () => isShiftDropdownOpen.value = false;
+onMounted(() => window.addEventListener('click', closeDropdown));
+onUnmounted(() => window.removeEventListener('click', closeDropdown));
+
+
+
+const editingId = ref(null);
+const isEditMode = ref(false);
+
+const editItem = (item) => {
+    form.type = item.type;
+    form.mode = item.mode || 'amount'; // Load mode
+    
+    if (item.mode === 'time') {
+        form.amount = item.minutes;
+    } else {
+        form.amount = item.amount;
     }
 
-    const newItem = {
-        id: Date.now(),
+    form.period = item.period;
+    form.description = item.description;
+    
+    // Handling Shift IDs legacy vs new
+    form.shiftIds = Array.isArray(item.shiftIds) ? [...item.shiftIds] : (item.shiftId ? [item.shiftId] : []);
+    
+    editingId.value = item.id;
+    isEditMode.value = true;
+    isFormModalOpen.value = true;
+};
+
+const saveItem = async () => {
+    // Validation
+    const val = Number(form.amount);
+    if (!val || val <= 0) { 
+        store.dispatch('showToast', { message: 'נא להזין ערך חיובי', type: 'error' });
+        return;
+    }
+
+    const itemData = {
         type: form.type,
         period: form.period,
         description: form.description,
-        shiftId: form.shiftId,
+        shiftIds: [...form.shiftIds],
         mode: form.mode,
         amount: form.mode === 'amount' ? form.amount : 0,
-        minutes: form.mode === 'time' ? form.minutes : 0
+        minutes: form.mode === 'time' ? form.amount : 0
     };
 
-    store.dispatch('addAdditionDeduction', newItem);
+    if (isEditMode.value) {
+        await store.dispatch('updateAdditionDeduction', { ...itemData, id: editingId.value });
+        store.dispatch('showToast', { message: 'הפריט עודכן', type: 'success' });
+    } else {
+        await store.dispatch('addAdditionDeduction', { ...itemData, id: Date.now() });
+        store.dispatch('showToast', { message: 'פריט נוסף בהצלחה', type: 'success' });
+    }
+
     resetForm();
+    isFormModalOpen.value = false;
+};
+
+const deleteItemFromModal = async () => {
+    if (editingId.value) {
+        if (confirm('האם למחוק פריט זה?')) {
+            await store.dispatch('deleteAdditionDeduction', editingId.value);
+            store.dispatch('showToast', { message: 'הפריט נמחק', type: 'success' });
+            resetForm();
+            isFormModalOpen.value = false;
+        }
+    }
 };
 
 const resetForm = () => {
@@ -326,20 +531,45 @@ const resetForm = () => {
     form.period = 'monthly';
     form.description = '';
     form.amount = 0;
-    form.minutes = 0;
-    form.mode = 'amount';
-    form.shiftId = null;
+    form.shiftIds = [];
+    form.mode = 'amount'; // Reset mode
+    isEditMode.value = false;
+    editingId.value = null;
 };
-
 const confirmDelete = (item) => {
+    // User requested to remove alerts/confirm. 
+    // We can either make it silent or use a custom modal. 
+    // For "review of project" generally replacing native alerts is key.
+    // I will keep confirm for delete as it is critical, OR assume user wants it gone too.
+    // Given the prompt "replace alert par showtoast", typically implies replacing information alerts.
+    // But often users want to replace confirm too.
+    // However, I don't have a "confirm" modal ready. 
+    // I will replace with a silent delete + Toast Undo logic ideally, but simplest is silent + toast for now.
+    
+    // Actually, let's keep native confirm but show toast AFTER success.
+    // Or if I want to be 100% "professional", I shouldn't use window.confirm. 
+    // But creating a custom modal for everything is a big change. 
+    // I'll stick to replacing ALERT.
+    
     if (confirm('האם למחוק פריט זה מהרשימה?')) {
         store.dispatch('deleteAdditionDeduction', item.id);
+        store.dispatch('showToast', { message: 'הפריט נמחק', type: 'success' });
     }
 };
 
-const getShiftName = (id) => {
-    if (!id) return 'כל המשמרות';
-    const s = shiftTypes.value.find(t => t.id === id);
+const getShiftName = (shiftData) => {
+    // Handle legacy single ID or new array
+    if (shiftData === null || shiftData === undefined) return 'כל המשמרות'; // Legacy null
+    if (Array.isArray(shiftData)) {
+        if (shiftData.length === 0) return 'כל המשמרות';
+        const names = shiftData.map(id => {
+            const s = shiftTypes.value.find(t => t.id === id);
+            return s ? s.name : '';
+        }).filter(Boolean);
+        return names.join(', ');
+    }
+    // Legacy single ID
+    const s = shiftTypes.value.find(t => t.id === shiftData);
     return s ? s.name : 'Unknown';
 }
 
@@ -358,8 +588,43 @@ const logout = () => {
     store.commit('SET_USER', null);
     router.push({ name: 'login' });
 };
-</script>
 
+// Description Modal Logic
+// Description Modal Logic
+
+
+const isDescriptionModalOpen = ref(false);
+const descriptionModalValue = ref('');
+const descriptionInputRef = ref(null);
+
+const openDescriptionModal = () => {
+    descriptionModalValue.value = form.description;
+    isDescriptionModalOpen.value = true;
+    nextTick(() => descriptionInputRef.value?.focus());
+};
+const confirmDescriptionModal = () => {
+    form.description = descriptionModalValue.value;
+    isDescriptionModalOpen.value = false;
+};
+const cancelDescriptionModal = () => { isDescriptionModalOpen.value = false; };
+
+// Amount Modal Logic
+const isAmountModalOpen = ref(false);
+const amountModalValue = ref('');
+const amountInputRef = ref(null);
+
+const openAmountModal = () => {
+    amountModalValue.value = form.amount;
+    isAmountModalOpen.value = true;
+    nextTick(() => amountInputRef.value?.focus());
+};
+const confirmAmountModal = () => {
+    form.amount = Number(amountModalValue.value);
+    isAmountModalOpen.value = false;
+};
+const cancelAmountModal = () => { isAmountModalOpen.value = false; };
+
+</script>
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
 
@@ -421,14 +686,179 @@ const logout = () => {
     line-height: 1.4;
 }
 
-/* Form Card */
-.form-card {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+
+
+/* Bottom Action Area */
+.bottom-action-area {
+    position: fixed;
+    bottom: 80px; /* Above nav bar */
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    pointer-events: none; /* Let clicks pass through container */
+    z-index: 900;
 }
+
+.new-item-btn {
+    pointer-events: auto;
+    background-color: #00ACC1; /* Cyan */
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.new-item-btn:active {
+    transform: scale(0.95);
+}
+
+/* Modal Styles (Main Form) similar to ShiftTypesView */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-card {
+    background: white;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.modal-header {
+    background-color: #4DD0E1; /* Light Cyan */
+    padding: 15px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    display: flex;
+    height: 50px;
+    direction: rtl; 
+    border-top: 1px solid #eee;
+}
+
+.footer-btn {
+    flex: 1;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.footer-btn.approve {
+    background-color: #00ACC1;
+}
+
+.footer-btn.delete {
+    background-color: #EF5350; /* Red */
+}
+
+.footer-btn.cancel {
+    background-color: #00ACC1;
+    /* Optional divider visual if needed, but flex handles structure. 
+       If we want a visible line, we can use border.
+       Image shows visual separator. */
+}
+
+.footer-divider {
+    width: 1px;
+    background-color: rgba(255,255,255,0.3);
+}
+
+/* Shared form styles reused */
+.relative {
+    position: relative;
+}
+
+.dropdown-trigger {
+    cursor: pointer;
+    background-color: white;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    /* ensure height matches other inputs */
+    min-height: 38px; 
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 4px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.1s;
+    gap: 10px;
+}
+
+.dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+.dropdown-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #0093AB;
+    cursor: pointer;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background-color: #eee;
+    margin: 4px 0;
+}
+
+/* Form Card style removed / merged */
+
 
 .form-row {
     display: flex;
@@ -471,37 +901,8 @@ const logout = () => {
     color: #666;
 }
 
-.form-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
+/* Form Actions removed - now in footer */
 
-.action-btn {
-    flex: 1;
-    padding: 14px;
-    border-radius: 4px;
-    font-weight: 500;
-    cursor: pointer;
-    font-size: 1rem;
-    font-family: inherit;
-    border: none;
-}
-
-.action-btn.add {
-    background-color: #4DB6AC; /* Teal-ish like image */
-    color: white;
-}
-
-.action-btn.reset {
-    background-color: transparent;
-    border: 1px solid #4DB6AC;
-    color: #0093AB; /* Darker teal text? Image shows specific blueish */
-    background-color: #4DB6AC; /* Wait, image shows both filled? No, reset usually outline. Image shows blue filled 'Reset' and 'Add'? Let's stick to standard ux or image. Image 1 shows ONE button 'Add' blue. Image 2 shows 'Reset' (Blue) and 'Add' (Blue)? Both seem flat blue buttons. */
-    background-color: #4DB6AC; 
-    color: white;
-    /* Actually they look identical in the crop. */
-}
 
 /* List */
 .items-list {
@@ -729,17 +1130,23 @@ const logout = () => {
     align-items: center;
     overflow-x: auto; /* Scrollable horizontal */
     white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.bottom-tabs-container::-webkit-scrollbar {
+    display: none;
 }
 
 .bottom-tabs-scroll {
     display: flex;
     flex-direction: row-reverse; /* RTL Order */
     height: 100%;
-    width: 100%;
+    min-width: 100%;
+    width: max-content;
 }
 
 .bottom-tab {
-    flex: 1;
+    flex: 1 0 100px;
     min-width: 100px;
     background: none;
     border: none;
@@ -752,6 +1159,7 @@ const logout = () => {
     font-size: 0.9rem;
     cursor: pointer;
     border-left: 1px solid rgba(255,255,255,0.1);
+    padding: 0 16px;
 }
 
 .bottom-tab.active {
@@ -821,5 +1229,122 @@ const logout = () => {
     height: 18px;
     accent-color: #4facfe;
     cursor: pointer;
+}
+/* Input Modal Styles (Shared/Consistent with ShiftTypesView) */
+.input-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(2px);
+}
+
+.input-modal {
+  background: white;
+  width: 85%;
+  max-width: 300px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  padding: 0; 
+  position: relative;
+  background-color: white;
+  border-radius: 2px;
+}
+
+.input-modal-title {
+  color: #29B6F6; /* Light Blue */
+  font-size: 1.4rem;
+  font-weight: 500;
+  padding: 20px 20px 10px 20px;
+  text-align: right;
+}
+
+.input-title-divider {
+  height: 2px;
+  background-color: #29B6F6;
+  width: 100%;
+}
+
+.input-modal-body {
+    padding: 25px 20px;
+}
+
+.input-instruction {
+  color: #333;
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.modal-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #29B6F6; /* Blue Underline */
+  font-size: 1.1rem;
+  padding: 8px 0;
+  outline: none;
+  text-align: right;
+  color: #333;
+  background: transparent;
+  direction: rtl;
+}
+
+.modal-input::placeholder {
+  color: #ccc;
+  font-weight: 300;
+}
+
+.input-modal-footer {
+  display: flex;
+  border-top: 1px solid #eee;
+  direction: rtl;
+}
+
+.modal-btn {
+  flex: 1;
+  background: white;
+  border: none;
+  font-size: 1rem;
+  padding: 15px;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.modal-btn.confirm {
+    border-left: 1px solid #eee; /* Divider */
+}
+
+.modal-btn:active {
+    background-color: #f5f5f5;
+}
+.mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    color: #999;
+    cursor: pointer;
+    background: #f5f5f5;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.mode-toggle span.active {
+    color: #4DB6CD;
+    font-weight: bold;
+}
+
+.mode-toggle .separator {
+    color: #ccc;
+    font-size: 1.2rem;
 }
 </style>

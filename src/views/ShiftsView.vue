@@ -74,10 +74,10 @@
 
         <!-- Shifts List -->
         <div v-else-if="shifts.length > 0" class="shifts-list" key="list">
-          <div v-for="(shift, index) in shifts" :key="index" class="shift-row" :class="{ 'row-selected': selectedIndices.has(index), 'row-active-red': shift.exit === '--:--' }" @click="handleRowClick(shift, index)">
+          <div v-for="(shift, index) in shifts" :key="shift.id || index" class="shift-row" :class="{ 'row-selected': selectedIds.has(shift.id), 'row-active-red': shift.exit === '--:--' }" @click="handleRowClick(shift, index)">
             <div class="col-date">
-              <div class="date-circle" :class="[getShiftTypeClass(shift.type), { selected: selectedIndices.has(index) }]" @click.stop="toggleSelection(index)">
-                <template v-if="selectedIndices.has(index)">
+              <div class="date-circle" :class="[getShiftTypeClass(shift.type), { selected: selectedIds.has(shift.id) }]" @click.stop="toggleSelection(shift.id)">
+                <template v-if="selectedIds.has(shift.id)">
                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </template>
                 <template v-else>
@@ -188,7 +188,7 @@
 
             <div class="detail-form-row">
                <label>משמרת:</label>
-               <input type="text" :value="editingShift.type" readonly class="input-box" @click="openShiftTypeModal(false)" />
+               <input type="text" :value="editingShift.type || 'בחר סוג משמרת'" readonly class="input-box" @click="openShiftTypeModal(false)" />
             </div>
 
             <div class="detail-form-row">
@@ -197,23 +197,22 @@
             </div>
 
             <div class="detail-form-row">
-               <label>
-                 יציאה:
-                 <input type="checkbox" class="inline-checkbox" />
-               </label>
-               <div class="input-with-icon">
-                 <input type="text" :value="editingShift.exit" readonly class="input-box" @click="openTimeModal('exit')" />
-                 <div class="icon-cancel-red">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="red" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                 </div>
-               </div>
+               <label>יציאה:</label>
+               <input type="text" :value="editingShift.exit" readonly class="input-box" @click="openTimeModal('exit')" />
             </div>
 
+            <!-- Calculated Daily Deduction (Read Only) from Rules -->
             <div class="detail-form-row">
-               <label style="color: red;">הפסקה:</label>
+               <label :style="{ color: calculatedRulesBreak > 0 ? '#ff5252' : '' }">הפסקה:</label>
                <div class="input-with-unit">
                  <span class="unit-text">דק'</span>
-                 <input type="number" :value="editingShift.break" readonly class="input-box" @click="openBreakModal" />
+                 <input 
+                    type="number" 
+                    v-model="editingShift.break" 
+                    :readonly="calculatedRulesBreak > 0" 
+                    class="input-box" 
+                    :class="{ 'read-only-field': calculatedRulesBreak > 0 }" 
+                 />
                </div>
             </div>
 
@@ -221,7 +220,7 @@
                <label>תוספת יומית:</label>
                <div class="input-with-unit">
                  <span class="unit-text">ש"ח</span>
-                 <input type="number" :value="editingShift.extra" readonly class="input-box" @click="openExtraModal" />
+                 <input type="number" :value="calculatedShiftAddition" readonly class="input-box read-only-field" />
                </div>
             </div>
 
@@ -229,31 +228,34 @@
                <label>הורדה יומית:</label>
                <div class="input-with-unit">
                  <span class="unit-text">ש"ח</span>
-                 <input type="number" :value="editingShift.deduction" readonly class="input-box" @click="openDeductionModal" />
+                 <input type="number" :value="calculatedShiftDeduction" readonly class="input-box read-only-field" />
                </div>
             </div>
 
-            <div class="detail-form-row notes-row">
-               <label class="notes-label">הערות:</label>
-                <textarea class="notes-area"></textarea>
-            </div>
+             <div class="detail-form-row notes-row">
+                <label class="notes-label">הערות:</label>
+                 <textarea class="notes-area"></textarea>
+             </div>
+            
+            <!-- DEBUG DATA DUMP -->
+
 
           </div>
 
           <div class="detail-footer">
-            <button class="footer-btn btn-delete" @click="deleteShift" v-if="editingShiftIndex !== -1">
-               <span>מחיקה</span>
-               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <button class="footer-btn btn-update" @click="updateShift">
+               <span>{{ editingShiftIndex === -1 ? 'שמור' : 'עדכן' }}</span>
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
             <div class="footer-divider"></div>
             <button class="footer-btn btn-cancel" @click="closeDetailModal">
                <span>ביטול</span>
                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
-            <div class="footer-divider"></div>
-            <button class="footer-btn btn-update" @click="updateShift">
-               <span>{{ editingShiftIndex === -1 ? 'שמור' : 'עדכן' }}</span>
-               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <div class="footer-divider" v-if="editingShiftIndex !== -1"></div>
+            <button class="footer-btn btn-delete" @click="deleteShift" v-if="editingShiftIndex !== -1">
+               <span>מחיקה</span>
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
         </div>
@@ -408,7 +410,7 @@
           <div class="input-title-divider"></div>
           
           <div class="shift-type-body">
-             <label v-for="type in mockShiftTypes" :key="type.id" class="shift-type-option" @click.prevent="selectShiftType(type.name)">
+             <label v-for="type in shiftTypes" :key="type.id" class="shift-type-option" @click="selectShiftType(type.name)">
                <span class="option-label">{{ type.name }}</span>
                <input type="radio" :checked="tempShiftType === type.name" class="option-radio" readonly>
              </label>
@@ -422,7 +424,8 @@
                 We will keep the footer for now unless requested to remove.
            -->
            <div class="input-modal-footer">
-            <!-- Optional buttons if needed, but per image it looks like a selection list. Let's keep standard interaction -->
+            <button class="modal-btn confirm" @click="confirmShiftTypeModal">אישור</button>
+            <button class="modal-btn cancel" @click="cancelShiftTypeModal">ביטול</button>
            </div>
         </div>
       </div>
@@ -485,9 +488,9 @@
           </div>
 
           <div class="detail-footer">
-               <button class="footer-btn" @click="isMonthlyPaymentModalOpen = false">ביטול</button>
-               <div class="footer-divider"></div>
                <button class="footer-btn" @click="confirmMonthlyPayment">אישור</button>
+               <div class="footer-divider"></div>
+               <button class="footer-btn" @click="isMonthlyPaymentModalOpen = false">ביטול</button>
           </div>
         </div>
       </div>
@@ -510,9 +513,9 @@
           </div>
 
           <div class="detail-footer">
-               <button class="footer-btn" @click="isRecuperationModalOpen = false">ביטול</button>
-               <div class="footer-divider"></div>
                <button class="footer-btn" @click="confirmRecuperation">אישור</button>
+               <div class="footer-divider"></div>
+               <button class="footer-btn" @click="isRecuperationModalOpen = false">ביטול</button>
           </div>
         </div>
       </div>
@@ -665,7 +668,7 @@
     <!-- Weekly Plan Shift Modal (formerly Quick Shift) -->
     <transition name="fade">
       <div v-if="isQuickShiftModalOpen" class="input-modal-overlay" @click.self="closeQuickShiftModal">
-        <div class="input-modal quick-shift-modal" style="padding: 0; overflow: hidden;">
+        <div class="input-modal quick-shift-modal" style="padding: 0; overflow: visible;">
           <div class="input-modal-header" style="background-color: #4DD0E1; color: white; padding: 15px; text-align: center;">
              <span style="font-size: 1.1rem; font-weight: 500;">משמרת סידור עבודה</span>
           </div>
@@ -681,7 +684,7 @@
 
                  <!-- Inline Dropdown Content -->
                  <transition name="fade">
-                    <div v-if="isPlanDropdownOpen" class="dropdown-content" style="background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 10px; position: absolute; top: 100%; left: 0; right: 0; z-index: 100;">
+                    <div v-if="isPlanDropdownOpen" class="dropdown-content" style="background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 10px; position: absolute; top: 100%; left: 0; right: 0; z-index: 1005;">
                         
                         <!-- Month Navigator -->
                         <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px; direction: ltr; background-color: #f9f9f9; border-radius: 4px;">
@@ -850,6 +853,12 @@
           </span>
           <span>דוח אקסל</span>
         </a>
+        <a href="#" class="menu-item" @click.prevent="recalculateAllShifts">
+          <span class="item-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          </span>
+          <span>חישוב מחדש</span>
+        </a>
         <div class="spacer-small"></div>
         
         <a href="#" class="menu-item" @click.prevent="logout">
@@ -868,7 +877,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import api from '../services/api'; 
@@ -909,27 +918,29 @@ const goToWeeklyPlan = () => {
 const currentTab = ref('shifts'); // 'shifts' or 'entry'
 
 // Selection Logic
-const selectedIndices = ref(new Set());
-const isSelectionMode = computed(() => selectedIndices.value.size > 0);
+const selectedIds = ref(new Set());
+const isSelectionMode = computed(() => selectedIds.value.size > 0);
 
-const toggleSelection = (index) => {
-  if (selectedIndices.value.has(index)) {
-    selectedIndices.value.delete(index);
+const toggleSelection = (id) => {
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id);
   } else {
-    selectedIndices.value.add(index);
+    selectedIds.value.add(id);
   }
-  // Trigger update for reactivity if needed (Vue ref of Set might not auto-trigger deeply without help, but replacing Set or resizing usually works. 
-  // Let's use a new Set to be sure or just reassign.)
-  selectedIndices.value = new Set(selectedIndices.value);
+  selectedIds.value = new Set(selectedIds.value);
 };
 
-const handleFabClick = () => {
+const handleFabClick = async () => {
   if (isSelectionMode.value) {
-    // Delete action
-    if (confirm('מחק משמרות נבחרות?')) {
-       // Filter out selected
-       shifts.value = shifts.value.filter((_, idx) => !selectedIndices.value.has(idx));
-       selectedIndices.value = new Set();
+    if (confirm(`למחוק ${selectedIds.value.size} משמרות?`)) {
+       const idsToDelete = Array.from(selectedIds.value);
+       
+       for (const id of idsToDelete) {
+           await store.dispatch('deleteShift', id);
+       }
+
+       selectedIds.value = new Set();
+       // Exit selection mode handled by computed
     }
   } else {
     // Menu Toggle
@@ -953,6 +964,7 @@ const editingShift = reactive({
 
 
 const editingShiftIndex = ref(-1);
+const editingShiftId = ref(null);
 
 const handleRowClick = (shift, index) => {
   // DEBUG: Check what we are clicking
@@ -963,6 +975,11 @@ const handleRowClick = (shift, index) => {
   
   const isNonEditable = nonEditableKeywords.some(keyword => type.includes(keyword));
   console.log('Is Non Editable?', isNonEditable);
+
+  if (isSelectionMode.value) {
+      toggleSelection(shift.id);
+      return;
+  }
 
   if (isNonEditable) {
       // Show info/toast instead of opening edit modal
@@ -977,6 +994,8 @@ const handleRowClick = (shift, index) => {
   }
 
   editingShiftIndex.value = index;
+  editingShiftId.value = shift.id;
+  // console.log("DEBUG: RowClick ID:", shift.id); // Logs removed
   
   // Populate
   const m = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
@@ -989,9 +1008,28 @@ const handleRowClick = (shift, index) => {
   // Apply defaults if values are missing, based on the shift type
   const defaults = getShiftDefaults(editingShift.type);
 
-  editingShift.break = shift.break || defaults.break;
-  editingShift.extra = shift.extra || defaults.extra;
-  editingShift.deduction = shift.deduction || defaults.deduction;
+  // Defensive: Unwrap & Fallback Logic
+  const unwrap = (val, def) => {
+      let v = val;
+      if (v && typeof v === 'object' && 'value' in v) v = v.value;
+      // If valid number (including 0 if explicitly set? Hard to distinguish 0 from missing if default is 0. 
+      // Assumption: 0 implies "No Break", but if "Rules" say 40, user usually wants 40.
+      // We'll prioritize: Explicit Value > Default > Rules > 0.
+      if (v !== undefined && v !== null && v !== '') return Number(v);
+      return Number(def) || 0;
+  };
+
+  let bVal = unwrap(shift.break, defaults.break);
+
+  // FIX: Force override "40" (Legacy Default) with current Rule (e.g. 20 or 45) check.
+  if ((bVal === 0 || bVal === 40) && calculatedRulesBreak.value > 0) {
+      console.log("Auto-correcting break from", bVal, "to rule value:", calculatedRulesBreak.value);
+      bVal = calculatedRulesBreak.value;
+  }
+
+  editingShift.break = bVal;
+  editingShift.extra = unwrap(shift.extra, defaults.extra);
+  editingShift.deduction = unwrap(shift.deduction, defaults.deduction);
   
   editingShift.notes = shift.notes || ''; 
   
@@ -1082,20 +1120,28 @@ const calculateShiftData = (shiftData) => {
     return { hoursStr, salaryStr };
 };
 
-const checkOverlap = (candidate, ignoreIdx, shiftsList = shifts.value, referenceDate = currentDate.value) => {
+const checkOverlap = (candidate, ignoreId = null, shiftsList = shifts.value, referenceDate = currentDate.value) => {
+    console.log("DEBUG: Checking Overlap for", candidate.fullDate, candidate.entry, candidate.exit, "Ignore:", ignoreId);
     const getShiftTimes = (s) => {
-        let dStr = s.fullDate;
-        if (!dStr) {
-             const d = s.dayNumber.toString().padStart(2, '0');
-             const m = (referenceDate.getMonth() + 1).toString().padStart(2, '0');
-             const y = referenceDate.getFullYear();
-             dStr = `${d}/${m}/${y}`;
+        // CORRECTION CRITIQUE: Utiliser la date absolue (ISO) si disponible pour éviter les confusions de mois
+        let day, mon, yr;
+        
+        if (s.date) {
+            const dateObj = new Date(s.date);
+            day = dateObj.getDate();
+            mon = dateObj.getMonth() + 1;
+            yr = dateObj.getFullYear();
+        } else if (s.fullDate) {
+             [day, mon, yr] = s.fullDate.split('/').map(Number);
+        } else {
+             // Fallback (uniquement si aucune date précise n'existe)
+             day = Number(s.dayNumber);
+             mon = referenceDate.getMonth() + 1;
+             yr = referenceDate.getFullYear();
         }
-        const [day, mon, yr] = dStr.split('/').map(Number);
         
-        // If it's a "Vacation", "Holiday" or other Fixed Payment type (isVacation=true), it consumes the WHOLE DAY ideally.
-        // Or if we check against a candidate that is Vacation, it conflicts with ANYTHING on that day.
-        
+        const dStr = `${day.toString().padStart(2, '0')}/${mon.toString().padStart(2, '0')}/${yr}`;
+
         let start = null;
         let end = null;
         let isAllDay = s.isVacation || false;
@@ -1136,10 +1182,11 @@ const checkOverlap = (candidate, ignoreIdx, shiftsList = shifts.value, reference
     if (!candTimes.start && !candTimes.isAllDay) return null; 
 
     // Find conflicting shift
-    const conflict = shiftsList.find((s, i) => {
-        if (i === ignoreIdx) return false;
+    const conflict = shiftsList.find((s) => {
+        if (ignoreId && s.id === ignoreId) return false;
         
         const sTimes = getShiftTimes(s);
+        console.log("DEBUG: Comparing against", sTimes.fullDate, "Start:", sTimes.start, "End:", sTimes.end);
         
         // If checking cross-list, simple date check isn't enough if lists are different months, 
         // but getShiftTimes parses fullDate so timestamps are correct absolute time.
@@ -1178,76 +1225,83 @@ const checkOverlap = (candidate, ignoreIdx, shiftsList = shifts.value, reference
     return conflict || null;
 };
 
-const updateShift = () => {
-    if (checkOverlap(editingShift, editingShiftIndex.value)) {
+const updateShift = async () => {
+    // Check overlap against ALL shifts (not just current view) to prevent cross-month conflicts
+    if (checkOverlap(editingShift, editingShiftId.value, store.getters.allShifts)) {
         alert('שגיאה: חפיפה בשעות המשמרת עם משמרת קיימת');
         return;
     }
 
-    // If index is -1, it's a NEW shift
+    // Call API logic via Store
     const { hoursStr, salaryStr } = calculateShiftData(editingShift);
-
-    if (editingShiftIndex.value === -1) {
-        // Create New object
-        // We need dayNumber and dayName from fullDate
-        // fullDate is DD/MM/YYYY
-        const [d, mStr, y] = editingShift.fullDate.split('/');
-        const dateObj = new Date(y, parseInt(mStr)-1, d);
-        const dayName = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).format(dateObj).replace('יום ', '');
-        
-        const newShift = {
-            dayNumber: d,
-            dayName: dayName,
-            type: editingShift.type,
-            entry: editingShift.entry,
-            exit: editingShift.exit,
-            break: editingShift.break,
-            extra: editingShift.extra,
-            deduction: editingShift.deduction,
-            fullDate: editingShift.fullDate,
-            hours: hoursStr,
-            salary: salaryStr,
-            isVacation: false
-        };
-        
-        shifts.value.push(newShift);
-        
-    } else {
-        // Update existing
-        const updatedShift = {
-            ...shifts.value[editingShiftIndex.value], // keep dayNumber etc
-            type: editingShift.type,
-            entry: editingShift.entry,
-            exit: editingShift.exit,
-            break: editingShift.break,
-            extra: editingShift.extra,
-            deduction: editingShift.deduction,
-            fullDate: editingShift.fullDate,
-            hours: hoursStr,
-            salary: salaryStr
-        };
-        
-        shifts.value[editingShiftIndex.value] = updatedShift;
-        
-        // If we just updated the active shift, we might need to sync it?
-        if (activeShift.value && shifts.value.indexOf(activeShift.value) === -1) {
-             // Logic to re-sync if needed
-        }
-    }
     
-    closeDetailModal();
+    // Parse Date
+    const [dStr, mStr, yStr] = editingShift.fullDate.split('/');
+    // Use noon to avoid timezone rolling date backward
+    const dateObj = new Date(parseInt(yStr), parseInt(mStr) - 1, parseInt(dStr), 12, 0, 0);
+    const dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][dateObj.getDay()];
+
+    // Construct payload
+    const shiftPayload = {
+        type: editingShift.type,
+        entry: editingShift.entry,
+        exit: editingShift.exit,
+        break: Number(editingShift.break) || 0,
+        extra: Number(editingShift.extra) || 0,
+        deduction: Number(editingShift.deduction) || 0,
+        fullDate: editingShift.fullDate,
+        dayNumber: dStr,
+        dayName: dayName,
+        hours: hoursStr,
+        salary: salaryStr,
+        notes: editingShift.notes,
+        date: dateObj.toISOString()
+    };
+
+    try {
+        if (editingShiftIndex.value === -1) {
+            // New Shift
+            await store.dispatch('addShift', { ...shiftPayload, isVacation: false });
+            store.dispatch('showToast', { message: 'משמרת נוספה בהצלחה', type: 'success' });
+        } else {
+            // Update Existing
+            const originalShift = store.getters.allShifts.find(s => s.id === editingShiftId.value);
+            if (!originalShift.id) {
+                 console.error("Cannot update shift without ID");
+                 return;
+            }
+            // Merge with original to keep IDs and unedited fields
+            const completeShift = {
+                ...originalShift,
+                ...shiftPayload
+            };
+            
+            await store.dispatch('updateShift', {
+                id: originalShift.id,
+                shift: completeShift
+            });
+            store.dispatch('showToast', { message: 'משמרת עודכנה בהצלחה', type: 'success' });
+        }
+        closeDetailModal();
+    } catch (err) {
+        console.error("Failed to save shift:", err);
+        store.dispatch('showToast', { message: 'שגיאה בשמירת המשמרת', type: 'error' });
+    }
 };
 
-const deleteShift = () => {
-    if (editingShiftIndex.value === -1) return;
+const deleteShift = async () => {
+    if (!editingShiftId.value && editingShiftIndex.value === -1) return;
     
     if (confirm("להסיר משמרת זו?")) {
-        // Check if removing active shift
-        if (shifts.value[editingShiftIndex.value] === activeShift.value) {
-            activeShift.value = null; // stop timer logic
+        const shiftToDelete = store.getters.allShifts.find(s => s.id === editingShiftId.value);
+        if (shiftToDelete && shiftToDelete.id) {
+            try {
+                await store.dispatch('deleteShift', shiftToDelete.id);
+                closeDetailModal();
+            } catch (err) {
+                console.error("Failed to delete shift:", err);
+            }
         }
-        shifts.value.splice(editingShiftIndex.value, 1);
-        closeDetailModal();
     }
 };
 
@@ -1260,12 +1314,109 @@ const isBreakModalOpen = ref(false);
 const breakModalValue = ref('');
 const breakInputRef = ref(null);
 
+
+
+// Utility to calculate break minutes from global/specific rules
+// Utility to calculate break minutes - SIMPLE VERSION (Priority: Settings -> Rules)
+const calculateBreakMinutes = (shiftTypeId) => {
+    // 1. Priority: General Settings (Simple)
+    const settings = store.getters.generalSettings || {};
+    if (settings.fixedBreak === true) {
+         // Respect setting value, default to 0 if missing (User requirement: no 40 default)
+         return Number(settings.fixedBreakDuration || settings.fixedBreakMinutes || 0);
+    }
+    
+    // 2. Secondary: Check Rules List (Additions/Deductions)
+    const rules = store.state.additionsDeductions || [];
+    const breakRule = rules.find(r => 
+        (r.mode === 'time' && r.minutes > 0) || 
+        r.description?.includes('הפסקה') || 
+        r.name?.includes('הפסקה')
+    );
+
+    if (breakRule) {
+         return Number(breakRule.minutes || breakRule.amount || 0);
+    }
+
+    return 0;
+};
+
+const calculatedRulesBreak = computed(() => {
+    if (!editingShift.type) return 0;
+    const typeObj = store.getters.allShiftTypes.find(t => t.name === editingShift.type);
+    const typeId = typeObj ? typeObj.id : null;
+    return calculateBreakMinutes(typeId);
+});
+
+// Sync Shift Break with Rules
+watch(calculatedRulesBreak, (newVal) => {
+    if (newVal > 0) {
+        editingShift.break = newVal;
+    }
+}, { immediate: true });
+
+const calculatedShiftAddition = computed(() => {
+    if (!editingShift.type) return 0;
+    const typeObj = store.getters.allShiftTypes.find(t => t.name === editingShift.type);
+    const typeId = typeObj ? typeObj.id : null;
+    
+    const rules = store.state.additionsDeductions || [];
+    const applicable = rules.filter(r => {
+        const isAddition = r.type === 'addition' && r.mode === 'amount' && r.period === 'daily';
+        if (!isAddition) return false;
+
+        const ruleShiftIds = r.shiftIds || [];
+        if (ruleShiftIds.length === 0) return true;
+        if (typeId) {
+             return ruleShiftIds.some(id => String(id) === String(typeId));
+        }
+        return false;
+    });
+
+    return applicable.reduce((sum, r) => {
+        const val = Number(r.amount || 0);
+        return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+});
+
+const calculatedShiftDeduction = computed(() => {
+    if (!editingShift.type) return 0;
+    const typeObj = store.getters.allShiftTypes.find(t => t.name === editingShift.type);
+    const typeId = typeObj ? typeObj.id : null;
+    
+    const rules = store.state.additionsDeductions || [];
+    
+    // Filter rules that are monetary daily deductions and are NOT break-related
+    const applicable = rules.filter(r => {
+        const isMonetaryDailyDeduction = r.type === 'deduction' && r.mode === 'amount' && r.period === 'daily';
+        if (!isMonetaryDailyDeduction) return false;
+
+        // Prevent Double Counting:
+        // Exclude rules that are already handled by calculateBreakMinutes (time-based breaks)
+        // or are explicitly named "הפסקה" (Break)
+        const isBreakRule = r.isFixedBreakAuto || r.type === 'break' || (r.type === 'deduction' && (r.mode === 'time' || Number(r.minutes) > 0));
+        const name = r.name || r.description || '';
+        if (isBreakRule || name.includes('הפסקה')) return false;
+
+        // Check for specific shift type applicability or global applicability
+        const ruleShiftIds = r.shiftIds || [];
+        if (ruleShiftIds.length === 0) return true; // This is the broad fallback for global rules
+        if (typeId) {
+             return ruleShiftIds.some(id => String(id) === String(typeId)); // Specific rule for this shift type
+        }
+        return false;
+    });
+
+    return applicable.reduce((sum, r) => {
+        const val = Number(r.amount || 0);
+        return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+});
+
 const openBreakModal = () => {
-  breakModalValue.value = editingShift.break;
-  isBreakModalOpen.value = true;
-  nextTick(() => {
-    breakInputRef.value?.focus();
-  });
+    breakModalValue.value = editingShift.break;
+    isBreakModalOpen.value = true;
+    nextTick(() => breakInputRef.value?.focus());
 };
 
 const confirmBreakModal = () => {
@@ -1476,7 +1627,7 @@ const availableWeeklyPlans = computed(() => {
         
         const startsInMonth = start.m === selectedMonth && start.y === selectedYear;
         const endsInMonth = end.m === selectedMonth && end.y === selectedYear;
-        const spansMonth = (new Date(plan.weekStart) < new Date(selectedYear, selectedMonth, 1)) && (new Date(plan.weekEnd) > new Date(selectedYear, selectedMonth + 1, 0));
+        const spansMonth = (new Date(plan.weekStart) < new Date(selectedYear, selectedMonth, 1)) && (new Date(selectedYear, selectedMonth + 1, 0) < new Date(plan.weekEnd));
 
         return startsInMonth || endsInMonth || spansMonth;
     }).sort((a, b) => new Date(a.weekStart) - new Date(b.weekStart));
@@ -1552,6 +1703,80 @@ const handleExcelAction = async (action) => {
         console.error(e);
         showToast('שגיאה ביצירת דוח', 'error');
     }
+};
+
+const recalculateAllShifts = async () => {
+    if (!confirm('האם לחשב מחדש את כל המשמרות בחודש זה?')) return;
+    
+    isLoading.value = true;
+    let count = 0;
+    
+    // Fetch fresh rules/types to ensure we have latest data
+    const allTypes = store.getters.allShiftTypes;
+    
+    for (const shift of shifts.value) {
+        // Skip un-editable types
+        if (['חופש','מחלה','חג'].some(t => shift.type.includes(t))) continue;
+
+        // Valid Type?
+        const typeObj = allTypes.find(t => t.name === shift.type);
+        if (!typeObj) continue; // Cannot calc without type rules
+
+        // Get logic-based defaults
+        const defaults = getShiftDefaults(shift.type);
+        
+        // 1. Break Fix: If current break is 0, try to apply default
+        let newBreak = Number(shift.break);
+        if (newBreak === 0 && defaults.break > 0) {
+            newBreak = defaults.break;
+        }
+
+        // 2. Extra/Deduction Fix: If 0, apply default
+        let newExtra = Number(shift.extra);
+        if (newExtra === 0 && defaults.extra > 0) newExtra = defaults.extra;
+        
+        let newDeduction = Number(shift.deduction);
+        if (newDeduction === 0 && defaults.deduction > 0) newDeduction = defaults.deduction;
+
+        // Construct Candidate
+        const candidate = {
+            ...shift,
+            break: newBreak,
+            extra: newExtra,
+            deduction: newDeduction
+        };
+        
+        // 3. FORCE Recalculation of Salary/Hours
+        // Even if break didn't change, maybe the Salary was calculated wrong (flat) initially.
+        const calculated = calculateShiftData(candidate);
+        
+        // Check if ANY field needs update (Break, Extra, Deduction, Hours, Salary)
+        const needsUpdate = 
+            newBreak !== Number(shift.break) ||
+            newExtra !== Number(shift.extra) ||
+            newDeduction !== Number(shift.deduction) ||
+            candidate.hours !== shift.hours ||
+            candidate.salary !== shift.salary;
+
+        if (needsUpdate) {
+            candidate.hours = calculated.hoursStr;
+            candidate.salary = calculated.salaryStr;
+            
+            // Add DayName if missing
+            if (!candidate.dayName) {
+                 const [d, m, y] = candidate.fullDate.split('/');
+                 const dateObj = new Date(y, m-1, d);
+                 candidate.dayName = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'][dateObj.getDay()];
+            }
+
+            await store.dispatch('updateShift', { id: shift.id, shift: candidate });
+            count++;
+        }
+    }
+    
+    isLoading.value = false;
+    showToast('success', `עודכנו ${count} משמרות`);
+    isMenuOpen.value = false;
 };
 
 const selectWeeklyPlan = (planId) => {
@@ -1642,15 +1867,33 @@ const openShiftTypeModal = (forEntry = false) => {
 };
 
 const confirmShiftTypeModal = () => {
+  const selectedType = tempShiftType.value;
+  
   if (isEntryMode.value) {
-      activeShiftType.value = tempShiftType.value;
+      if (activeShiftType.value !== selectedType) {
+          activeShiftType.value = selectedType;
+      }
   } else {
-      editingShift.type = tempShiftType.value;
-  }
-  if (isEntryMode.value && activeShiftType.value !== tempShiftType.value) {
-      activeShiftType.value = tempShiftType.value;
-  } else if (!isEntryMode.value && editingShift.type !== tempShiftType.value) {
-      editingShift.type = tempShiftType.value;
+      if (editingShift.type !== selectedType) {
+          editingShift.type = selectedType;
+          
+          // Auto-fill defaults from Shift Type (Entry, Exit, etc.)
+          const typeObj = store.getters.allShiftTypes.find(t => t.name === selectedType);
+          if (typeObj) {
+              if (typeObj.entry && typeObj.entry !== '--:--') {
+                  editingShift.entry = typeObj.entry;
+              }
+              if (typeObj.exit && typeObj.exit !== '--:--') {
+                  editingShift.exit = typeObj.exit;
+              }
+              
+              // Also update extras/deductions defaults if available
+              const defaults = getShiftDefaults(selectedType);
+              if (defaults.extra !== undefined) editingShift.extra = defaults.extra;
+              if (defaults.deduction !== undefined) editingShift.deduction = defaults.deduction;
+              // Note: Break is handled by the watcher on calculatedRulesBreak
+          }
+      }
   }
   isShiftTypeModalOpen.value = false;
 };
@@ -1658,10 +1901,6 @@ const confirmShiftTypeModal = () => {
 // Watch for temp change to auto-close if mimicking native like behavior or just waiting for selection?
 // Image shows radios. User said "when I click morning". It implies immediate action? 
 // The image shows radio buttons UNSELECTED or SELECTED.
-// But lets make it select-and-close if desired, or just standard.
-// "Rectificatif, lorsque l on clique sur בוקר, je veux que s affiche tel que dans l image"
-// This means: "Correction, when I click on 'Morning', I want it to display AS IN THE IMAGE".
-// The image SHOWS a modal with 'Morning', 'Friday', 'Night' with radio buttons.
 // This modal appears presumably after clicking the "Shift Type" (Morning) button.
 // So the request is about the STYLE of this modal.
 // I have removed the footer buttons to clean it up, but we need a way to close/confirm.
@@ -1671,7 +1910,7 @@ const confirmShiftTypeModal = () => {
 
 const selectShiftType = (type) => {
     tempShiftType.value = type;
-    confirmShiftTypeModal();
+    // confirmShiftTypeModal(); // Changed: User initiates confirmation via footer button
 };
 
 const cancelShiftTypeModal = () => {
@@ -1831,7 +2070,20 @@ let clockInterval = null;
 onMounted(() => {
     updateClock();
     clockInterval = setInterval(updateClock, 1000);
+    restoreActiveShift();
 });
+
+const restoreActiveShift = () => {
+    const all = store.getters.allShifts;
+    // Find open shift: entry exists, exit is empty/placeholder, not vacation
+    const found = all.find(s => s.entry && s.entry !== '--:--' && (!s.exit || s.exit === '--:--') && !s.isVacation);
+    
+    if (found) {
+        console.log("Restoring active shift:", found);
+        activeShift.value = found;
+        startTimer(found.entry);
+    }
+};
 
 // Active Shift Logic
 const activeShift = ref(null);
@@ -2452,7 +2704,7 @@ const shifts = computed(() => {
   const targetMonth = currentDate.value.getMonth();
   const targetYear = currentDate.value.getFullYear();
   return all.filter(s => {
-      if (!s.date) return false;
+      if (!s || !s.date) return false;
       const d = new Date(s.date);
       return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
   });
@@ -2469,8 +2721,16 @@ const getShiftDefaults = (typeName) => {
     if (!type) {
         return { break: 0, extra: 0, deduction: 0 };
     }
+    
+    // Priority Fix: Use Shift Type defined break FIRST (Specific). If 0, fallback to Global Rules.
+    const typeBreak = Number(type.break || 0);
+    const ruleBreak = calculateBreakMinutes(type.id);
+    
+    // If Shift Type has a specific Break (e.g. 42), use it. Otherwise use Rule (e.g. 20).
+    const finalBreak = typeBreak > 0 ? typeBreak : ruleBreak;
+
     return {
-        break: type.break || 0,
+        break: finalBreak,
         extra: type.extra || 0,
         deduction: type.deduction || 0
     };
@@ -2671,6 +2931,13 @@ const handleQuickDayClick = async (dayItem) => {
         deduction: 0,
         date: d.toISOString()
     };
+    
+    // Apply defaults (break, extra, deduction) based on Shift Type
+    // This fixes the issue where weekly plan shifts don't inherit breaks/rules
+    const defaults = getShiftDefaults(planShift.shiftName);
+    newShift.break = defaults.break;
+    newShift.extra = defaults.extra;
+    newShift.deduction = defaults.deduction;
 
     // Calculate hours/salary
     const { hoursStr, salaryStr } = calculateShiftData(newShift);
@@ -2723,8 +2990,13 @@ const endPress = (day) => {
     pressingDay.value = null;
     
     if (!isLongPressHandled.value) {
-        // Short press detected -> Show Hint
-        showToast('info', 'יש ללחוץ לפחות שניה אחת על יום רצוי כדי להוסיף משמרת מהירה');
+        // Short press detected
+        // User feedback: "click adds only one date". Expected: Add WHOLE LINE (Weekly Plan).
+        if (activeWeeklyPlan.value) {
+             addAllShiftsFromPlan(activeWeeklyPlan.value);
+        } else {
+             handleQuickDayClick(day);
+        }
     }
     isLongPressHandled.value = false;
 };
@@ -2792,6 +3064,18 @@ const addAllShiftsFromPlan = async (plan) => {
             notes: '',
             date: targetDate.toISOString()
         };
+        
+        // Apply defaults (break, extra, deduction) based on Shift Type
+        const defaults = getShiftDefaults(dayPlan.shiftName);
+        newShift.break = defaults.break;
+        newShift.extra = defaults.extra;
+        newShift.deduction = defaults.deduction;
+        
+        // Re-calculate Hours/Salary with the applied break
+        // calculateShiftData uses the break value we just set
+        const calculated = calculateShiftData(newShift);
+        newShift.hours = calculated.hoursStr;
+        newShift.salary = calculated.salaryStr;
 
         // Check Overlap
         const allShifts = store.getters.allShifts;
@@ -2851,15 +3135,16 @@ const handleFabItemClick = (item) => {
         const h = now.getHours().toString().padStart(2, '0');
         const min = now.getMinutes().toString().padStart(2, '0');
         
-        editingShiftIndex.value = -1; // New Shift Flag
+        editingShiftIndex.value = -1; 
+        editingShiftId.value = null; // New Shift Flag
         
         // Populate editingShift
         editingShift.fullDate = fullDate;
-        editingShift.type = 'בוקר';
+        editingShift.type = '';
         editingShift.entry = '--:--';
         editingShift.exit = '--:--';
         
-        const defaults = getShiftDefaults('בוקר');
+        const defaults = getShiftDefaults('');
         editingShift.break = defaults.break;
         editingShift.extra = defaults.extra;
         editingShift.deduction = defaults.deduction;
@@ -2953,7 +3238,7 @@ const closeQuickShiftModal = () => {
 }
 
 .header-right-spacer {
-    width: 24px;
+    width: 75px;
     display: flex;
     justify-content: center;
 }
@@ -3785,12 +4070,15 @@ const closeQuickShiftModal = () => {
 /* Toast Notification */
 .toast-notification {
     position: fixed;
+    top: auto; /* Override global App.vue style */
     bottom: 20px;
     left: 0;
     right: 0;
     margin: 0 auto;
     width: fit-content;
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: 12px 20px;
     border-radius: 50px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -3960,6 +4248,7 @@ const closeQuickShiftModal = () => {
   display: flex;
   background-color: #0093AB;
   height: 50px;
+  direction: rtl; 
 }
 
 .footer-btn {
@@ -4002,19 +4291,20 @@ const closeQuickShiftModal = () => {
 .input-modal {
   background: white;
   width: 85%;
-  max-width: 340px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  max-width: 300px; /* Matched image proportions */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
   padding: 0; 
   position: relative;
   background-color: white;
+  border-radius: 2px;
 }
 
 .input-modal-title {
   color: #29B6F6; /* Light Blue */
-  font-size: 1.6rem;
-  font-weight: 400;
+  font-size: 1.4rem;
+  font-weight: 500;
   padding: 20px 20px 10px 20px;
   text-align: right;
 }
@@ -4026,12 +4316,12 @@ const closeQuickShiftModal = () => {
 }
 
 .input-modal-body {
-    padding: 20px;
+    padding: 25px 20px;
 }
 
 .input-instruction {
   color: #333;
-  margin: 0 0 30px 0;
+  margin: 0 0 15px 0;
   font-size: 1rem;
   text-align: right;
 }
@@ -4039,6 +4329,7 @@ const closeQuickShiftModal = () => {
 .modal-input {
   width: 100%;
   border: none;
+  border-bottom: 2px solid #29B6F6; /* Blue Underline from image */
   font-size: 1.1rem;
   padding: 8px 0;
   outline: none;
@@ -4054,16 +4345,13 @@ const closeQuickShiftModal = () => {
 }
 
 .input-line {
-  height: 2px;
-  background-color: #29B6F6;
-  width: 100%;
-  margin-top: 0;
-  margin-bottom: 20px;
+  display: none; /* Hidden, using border-bottom on input */
 }
 
 .input-modal-footer {
   display: flex;
   border-top: 1px solid #eee;
+  direction: rtl;
 }
 
 .modal-btn {
@@ -4075,11 +4363,11 @@ const closeQuickShiftModal = () => {
   cursor: pointer;
   color: #333;
   transition: background 0.2s;
+  font-weight: 500;
 }
 
 .modal-btn.confirm {
-    border-left: 1px solid #eee; 
-    font-weight: 500;
+    border-left: 1px solid #eee; /* Divider */
 }
 
 .modal-btn:active {
@@ -4245,5 +4533,12 @@ const closeQuickShiftModal = () => {
 }
 .transparent-input::placeholder {
     color: #ccc;
+}
+
+.read-only-field {
+    background-color: #f9f9f9;
+    color: #666;
+    border-color: #e0e0e0;
+    pointer-events: none; /* Make it unclickable */
 }
 </style>

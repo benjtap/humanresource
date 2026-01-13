@@ -71,6 +71,12 @@ const router = createRouter({
             component: () => import('../views/TaxDeductionsView.vue'),
             meta: { requiresAuth: true }
         },
+        {
+            path: '/general-settings',
+            name: 'general-settings',
+            component: () => import('../views/GeneralSettingsView.vue'),
+            meta: { requiresAuth: true }
+        },
     ]
 })
 

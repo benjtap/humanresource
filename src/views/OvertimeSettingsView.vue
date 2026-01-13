@@ -114,14 +114,14 @@
             </div>
 
              <div class="modal-footer">
-                <button class="footer-btn cancel" @click="closeShiftModal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    ביטול
-                </button>
-                 <div class="footer-divider"></div>
                 <button class="footer-btn approve" @click="saveShiftChanges">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     אישור
+                </button>
+                 <div class="footer-divider"></div>
+                <button class="footer-btn cancel" @click="closeShiftModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    ביטול
                 </button>
             </div>
         </div>
@@ -157,14 +157,14 @@
 
             </div>
              <div class="modal-footer">
-                <button class="footer-btn cancel" @click="closeRuleModal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    ביטול
-                </button>
-                 <div class="footer-divider"></div>
                 <button class="footer-btn approve" @click="saveRule">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     אישור
+                </button>
+                 <div class="footer-divider"></div>
+                <button class="footer-btn cancel" @click="closeRuleModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    ביטול
                 </button>
             </div>
          </div>
@@ -243,6 +243,10 @@
                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 <span>מס הכנסה</span>
             </button>
+            <button class="bottom-tab" @click="$router.push('/general-settings')">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>כללי</span>
+            </button>
 
         </div>
     </div>
@@ -301,16 +305,20 @@ const saveShiftChanges = () => {
     if (editingShiftId.value !== null) {
         const type = shiftTypes.value.find(t => t.id === editingShiftId.value);
         if (type) {
-            store.dispatch('updateShiftType', {
-                ...type,
+            const payload = {
+                id: type.id,
+                numericId: type.numericId,
                 name: tempShiftName.value,
+                color: type.color, // Preserve color
                 entry: tempEntry.value,
                 exit: tempExit.value,
                 break: parseInt(tempBreak.value),
                 extra: parseFloat(tempExtra.value),
                 deduction: parseFloat(tempDeduction.value),
-                rates: tempRules.value
-            });
+                rates: JSON.parse(JSON.stringify(tempRules.value)) // Ensure clean array
+            };
+            store.dispatch('updateShiftType', payload);
+            store.dispatch('showToast', { message: 'הגדרות עודכנו בהצלחה', type: 'success' });
         }
     }
     isShiftModalOpen.value = false;
@@ -737,8 +745,8 @@ const logout = () => {
 .modal-footer {
     display: flex;
     border-top: 1px solid #eee;
-    background-color: #0093AB; /* Teal footer per image 1? No wait, image 1 has teal background buttons? Actually looks like standard white bg, but image 2 has blue background footer. Let's make it look like Image 2 for the modal footer */
-    background: #0093AB; 
+    background-color: #0093AB; 
+    direction: rtl; 
 }
 
 .footer-btn {
@@ -848,6 +856,9 @@ const logout = () => {
     text-align: center;
     color: #333;
     outline: none;
+    background: white;
+    position: relative;
+    z-index: 10;
 }
 
 .label-below {
@@ -919,24 +930,32 @@ const logout = () => {
 .spacer-small { height: 16px; }
 .sidebar-footer { padding: 16px; margin-left: 20px; }
 
-/* Bottom Tabs - Copied from SettingsView */
+/* Bottom Tabs */
 .bottom-tabs-container {
     height: 70px;
     background-color: #0093AB;
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    overflow-x: auto; 
+    overflow-x: auto; /* Scrollable horizontal */
     white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
+.bottom-tabs-container::-webkit-scrollbar {
+    display: none;
+}
+
 .bottom-tabs-scroll {
     display: flex;
-    flex-direction: row-reverse; 
+    flex-direction: row-reverse; /* RTL Order */
     height: 100%;
-    width: 100%;
+    min-width: 100%;
+    width: max-content;
 }
+
 .bottom-tab {
-    flex: 1;
+    flex: 1 0 100px;
     min-width: 100px;
     background: none;
     border: none;
@@ -949,7 +968,9 @@ const logout = () => {
     font-size: 0.9rem;
     cursor: pointer;
     border-left: 1px solid rgba(255,255,255,0.1);
+    padding: 0 16px;
 }
+
 .bottom-tab.active {
     color: white;
     background-color: rgba(0,0,0,0.1);

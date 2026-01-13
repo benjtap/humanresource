@@ -21,13 +21,7 @@
       </button>
     </header>
 
-    <!-- Page Title Bar -->
-    <div class="page-title-bar">
-        <span>הגדרות</span>
-        <div class="title-icon">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-        </div>
-    </div>
+
 
     <!-- Main Content -->
     <div class="content-scroll">
@@ -43,12 +37,12 @@
             <div class="setting-group">
                 <p class="instruction-text">נא להכניס שכר לשעת עבודה רגילה.</p>
                 <div class="wage-input-wrapper">
-                    <button class="refresh-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    <button class="refresh-btn" @click="syncSettings">
+                        <svg :class="{ 'spinning': isSaving }" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                     </button>
-                    <div class="wage-box">
+                    <div class="wage-box" @click="openWageModal">
                         <span class="currency-symbol">₪</span>
-                        <input type="number" v-model="hourlyWage" class="wage-input" />
+                        <input type="number" :value="hourlyWage" class="wage-input" readonly />
                     </div>
                 </div>
             </div>
@@ -71,6 +65,24 @@
 
         </div>
     </div>
+
+    <!-- Wage Modal -->
+    <transition name="fade">
+      <div v-if="isWageModalOpen" class="input-modal-overlay" @click.self="isWageModalOpen = false">
+        <div class="input-modal">
+           <div class="input-modal-title">שכר לשעה</div>
+           <div class="input-title-divider"></div>
+           <div class="input-modal-body">
+               <p class="input-instruction">נא להכניס שכר לשעה</p>
+               <input type="number" v-model="tempHourlyWage" class="modal-input" placeholder="שכר לשעה" inputmode="decimal" />
+           </div>
+           <div class="input-modal-footer">
+               <button class="modal-btn confirm" @click="saveWage">אישור</button>
+               <button class="modal-btn cancel" @click="isWageModalOpen = false">ביטול</button>
+           </div>
+        </div>
+      </div>
+    </transition>
 
     <!-- Calculation Day Confirmation Modal -->
     <transition name="fade">
@@ -111,6 +123,10 @@
             <button class="bottom-tab" @click="$router.push('/tax-deductions')">
                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 <span>מס הכנסה</span>
+            </button>
+            <button class="bottom-tab" @click="$router.push('/general-settings')">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>כללי</span>
             </button>
 
         </div>
@@ -215,6 +231,20 @@ const salaryStartDay = computed(() => store.getters.salaryStartDay);
 const isModalOpen = ref(false);
 const selectedTempDay = ref(1);
 
+// Wage Modal Logic
+const isWageModalOpen = ref(false);
+const tempHourlyWage = ref(0);
+
+const openWageModal = () => {
+    tempHourlyWage.value = hourlyWage.value;
+    isWageModalOpen.value = true;
+};
+
+const saveWage = () => {
+    hourlyWage.value = parseFloat(tempHourlyWage.value);
+    isWageModalOpen.value = false;
+};
+
 const handleDayClick = (day) => {
     selectedTempDay.value = day;
     isModalOpen.value = true;
@@ -250,10 +280,33 @@ const handleSwipe = () => {
     // Swipe logic if needed
 };
 
+const isSaving = ref(false);
+
+const syncSettings = async () => {
+    isSaving.value = true;
+    try {
+        await store.dispatch('saveAllSettings');
+    } catch (e) {
+        console.error("Failed to sync settings", e);
+        store.dispatch('showToast', { message: 'שגיאה בשמירת הגדרות', type: 'error' });
+    } finally {
+        setTimeout(() => isSaving.value = false, 1000);
+    }
+};
+
 </script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
 
 .settings-page {
   font-family: 'Heebo', sans-serif;
@@ -436,17 +489,23 @@ const handleSwipe = () => {
     align-items: center;
     overflow-x: auto; /* Scrollable horizontal */
     white-space: nowrap;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scrollbar-width: none; /* Firefox */
+}
+.bottom-tabs-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
 }
 
 .bottom-tabs-scroll {
     display: flex;
     flex-direction: row-reverse; /* RTL Order */
     height: 100%;
-    width: 100%;
+    min-width: 100%; /* Ensure full width used */
+    width: max-content; /* Allow content to overflow horizontally */
 }
 
 .bottom-tab {
-    flex: 1;
+    flex: 1 0 100px; /* Grow to fill, but minimum 100px basis */
     min-width: 100px;
     background: none;
     border: none;
@@ -459,6 +518,7 @@ const handleSwipe = () => {
     font-size: 0.9rem;
     cursor: pointer;
     border-left: 1px solid rgba(255,255,255,0.1);
+    padding: 0 16px; /* Horizontal padding for spacing */
 }
 
 .bottom-tab.active {
@@ -655,13 +715,8 @@ const handleSwipe = () => {
 
 .modal-footer {
     display: flex;
-    flex-direction: row-reverse; /* To have Confirm on Right if we want strict RTL or just flex */
-    /* Wait, usually in RTL Confirm is on Right? Or Left? 
-       Image shows Cancel (Left), Confirm (Right).
-       So flex-direction: row is fine if order is Cancel, Confirm.
-       Let's use row and precise ordering.
-    */
-   border-top: 1px solid #eee;
+    direction: rtl; 
+    border-top: 1px solid #eee;
 }
 
 .modal-btn {
@@ -695,5 +750,102 @@ const handleSwipe = () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Input Modal Styles (Matched with ShiftsView) */
+.input-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(2px);
+}
+
+.input-modal {
+  background: white;
+  width: 85%;
+  max-width: 300px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  padding: 0; 
+  position: relative;
+  background-color: white;
+  border-radius: 2px;
+}
+
+.input-modal-title {
+  color: #29B6F6; /* Light Blue */
+  font-size: 1.4rem;
+  font-weight: 500;
+  padding: 20px 20px 10px 20px;
+  text-align: right;
+}
+
+.input-title-divider {
+  height: 2px;
+  background-color: #29B6F6;
+  width: 100%;
+}
+
+.input-modal-body {
+    padding: 25px 20px;
+}
+
+.input-instruction {
+  color: #333;
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.modal-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #29B6F6;
+  font-size: 1.1rem;
+  padding: 8px 0;
+  outline: none;
+  text-align: right;
+  color: #333;
+  background: transparent;
+  direction: rtl;
+}
+
+.modal-input::placeholder {
+  color: #ccc;
+  font-weight: 300;
+}
+
+.input-modal-footer {
+  display: flex;
+  border-top: 1px solid #eee;
+  direction: rtl;
+}
+
+.modal-btn {
+  flex: 1;
+  background: white;
+  border: none;
+  font-size: 1rem;
+  padding: 15px;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.modal-btn.confirm {
+    border-left: 1px solid #eee;
+}
+
+.modal-btn:active {
+    background-color: #f5f5f5;
 }
 </style>
