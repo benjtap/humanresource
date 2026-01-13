@@ -873,9 +873,14 @@ input:checked + .slider:before {
     display: flex;
     align-items: center;
     overflow-x: auto; /* Scrollable horizontal */
-    white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    direction: rtl;
+
+    /* Mobile Scrolling Fixes */
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
 }
 .bottom-tabs-container::-webkit-scrollbar {
     display: none;
@@ -883,15 +888,15 @@ input:checked + .slider:before {
 
 .bottom-tabs-scroll {
     display: flex;
-    flex-direction: row-reverse; /* RTL Order */
+    flex-direction: row; /* Standard row */
     height: 100%;
     min-width: 100%;
     width: max-content;
 }
 
 .bottom-tab {
-    flex: 1 0 100px;
-    min-width: 100px;
+    flex: 0 0 auto;
+    width: 100px; /* Fixed width */
     background: none;
     border: none;
     color: rgba(255,255,255,0.7);

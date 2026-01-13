@@ -487,9 +487,14 @@ const syncSettings = async () => {
     display: flex;
     align-items: center;
     overflow-x: auto;
-    white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    direction: rtl; /* Ensure RTL context for scrolling */
+    
+    /* Mobile Scrolling Fixes */
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
 }
 
 .bottom-tabs-container::-webkit-scrollbar {
@@ -498,14 +503,15 @@ const syncSettings = async () => {
 
 .bottom-tabs-scroll {
     display: flex;
-    flex-direction: row-reverse; /* RTL Order */
+    flex-direction: row; /* Standard row, RTL will handle visual order */
     height: 100%;
     min-width: 100%;
     width: max-content;
 }
 
 .bottom-tab {
-    flex: 1 0 100px;
+    flex: 0 0 auto; /* Do not grow, do not shrink, based on width/content */
+    width: 100px; /* Fixed width base */
     min-width: 100px;
     height: 100%;
     background: none;

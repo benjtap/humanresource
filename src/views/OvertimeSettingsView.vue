@@ -1185,6 +1185,7 @@ const logout = () => {
 
 /* Bottom Tabs */
 /* Bottom Tabs */
+/* Bottom Tabs */
 .bottom-tabs-container {
     height: 70px;
     background-color: #0093AB;
@@ -1192,9 +1193,14 @@ const logout = () => {
     display: flex;
     align-items: center;
     overflow-x: auto;
-    white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    direction: rtl; /* Ensure RTL context */
+    
+    /* Mobile Scrolling Fixes */
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
 }
 .bottom-tabs-container::-webkit-scrollbar {
     display: none;
@@ -1204,15 +1210,16 @@ const logout = () => {
 
 .bottom-tabs-scroll {
     display: flex;
-    flex-direction: row-reverse; /* RTL Order */
+    flex-direction: row; /* Standard row, RTL will handle visual order */
     height: 100%;
     min-width: 100%;
     width: max-content;
 }
 
 .bottom-tab {
-    flex: 1 0 100px;
-    min-width: 100px;
+    flex: 0 0 auto; /* Do not grow, do not shrink */
+    width: 100px; /* Fixed width */
+    height: 100%;
     background: none;
     border: none;
     color: rgba(255,255,255,0.7);
