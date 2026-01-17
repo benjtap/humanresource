@@ -766,27 +766,7 @@
       </div>
     </transition>
 
-    <!-- Excel Report Modal -->
-    <transition name="fade">
-      <div v-if="isExcelModalOpen" class="input-modal-overlay" @click.self="isExcelModalOpen = false">
-        <div class="input-modal">
-          <div class="input-modal-title" style="color: #4facfe;">
-             קובץ אקסל
-          </div>
-          <div class="input-title-divider" style="background-color: #4facfe;"></div>
-          
-          <div class="input-modal-body" style="padding: 20px; text-align: center;">
-             <p style="margin-bottom: 20px; font-size: 1.1rem; color: #555;">האם לשלוח קובץ אקסל למייל או לצפות בו עכשיו?</p>
-          </div>
-
-          <div class="input-modal-footer">
-               <button class="modal-btn" style="color: #2196F3;" @click="handleExcelAction('email')">שלח למייל</button>
-               <button class="modal-btn" style="color: grey;" @click="isExcelModalOpen = false">ביטול</button>
-               <button class="modal-btn" style="color: #2196F3;" @click="handleExcelAction('view')">צפה בקובץ</button>
-          </div>
-        </div>
-      </div>
-    </transition>
+    <!-- Excel Report Modal Removed (Handled by Sidebar) -->
 
     <!-- Toast Notification -->
     <transition name="fade-fast">
@@ -802,89 +782,20 @@
         </div>
     </transition>
 
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" v-if="isMenuOpen" @click="isMenuOpen = false"></div>
-
-    <!-- Sidebar Menu -->
-    <aside class="sidebar" :class="{ open: isMenuOpen }">
-      <!-- Sidebar Header -->
-      <div class="sidebar-header">
-        <div class="header-bg-decor"></div>
-        <div class="sidebar-top-row">
-          <span class="account-name">חשבון: עבודה 1</span>
-        </div>
-        <div class="sidebar-bottom-row">
-          <div class="menu-label-group">
-            <button class="icon-btn" @click="isMenuOpen = false">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
-            <span class="menu-text">תפריט</span>
-          </div>
-          <div class="user-avatar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#ccc" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Menu Items -->
-      <div class="menu-items">
-        <router-link to="/shifts" class="menu-item" @click="isMenuOpen = false; currentTab = 'shifts'">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          </span>
-          <span>משמרות</span>
-        </router-link>
-        <a href="#" class="menu-item" @click.prevent="goToSummary">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-          </span>
-          <span>פירוט שכר</span>
-        </a>
-        <a href="#" class="menu-item" @click.prevent="goToWeeklyPlan">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-          </span>
-          <span>סידור עבודה</span>
-        </a>
-        <router-link to="/shift-types" class="menu-item" @click="isMenuOpen = false">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-          </span>
-          <span>הגדרת סוג משמרת</span>
-        </router-link>
-        <router-link to="/settings" class="menu-item" @click="isMenuOpen = false">
-          <span class="item-icon">
-             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-          </span>
-          <span>הגדרות</span>
-        </router-link>
-        <div class="spacer-small"></div>
-        <a href="#" class="menu-item" @click.prevent="openExcelModal">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          </span>
-          <span>דוח אקסל</span>
-        </a>
-        <a href="#" class="menu-item" @click.prevent="recalculateAllShifts">
-          <span class="item-icon">
-             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-          </span>
-          <span>חישוב מחדש</span>
-        </a>
-        <div class="spacer-small"></div>
-        
-        <a href="#" class="menu-item" @click.prevent="logout">
-           <span class="item-icon">
-             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-           </span>
-           <span>יציאה</span>
-        </a>
-      </div>
-
-      <div class="sidebar-footer">
-        <!-- Version Removed -->
-      </div>
-    </aside>
+    <Sidebar 
+      :isOpen="isMenuOpen" 
+      @update:isOpen="isMenuOpen = $event" 
+      :currentDate="currentDate"
+    >
+       <template #extra-items>
+          <a href="#" class="menu-item" @click.prevent="recalculateAllShifts">
+            <span class="item-icon">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </span>
+            <span>חישוב מחדש</span>
+          </a>
+       </template>
+    </Sidebar>
   </div>
 </template>
 
@@ -896,36 +807,14 @@ import api from '../services/api';
 // Wait, this project uses options store in src/store/index.js.
 // Best way in setup script is:
 import store from '../store'; 
+import Sidebar from '../components/Sidebar.vue';
 
 const router = useRouter();
 
 const isMenuOpen = ref(false);
 const isFabMenuOpen = ref(false);
 
-const logout = () => {
-    store.dispatch('saveToken', null); // Clear token
-    store.commit('SET_USER', null); // Clear user
-    router.push({ name: 'login' });
-};
-
-const goToSummary = () => {
-    isMenuOpen.value = false;
-    // Pass current date viewer to summary
-    // currentDate is a Date object. Convert to YYYY-MM-DD or just pass it as string.
-    // We want the summary to know which month we are looking at.
-    const y = currentDate.value.getFullYear();
-    const m = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
-    const d = currentDate.value.getDate().toString().padStart(2, '0');
-    
-    // We can pass ISO string date=2026-01-03
-    const dateParam = `${y}-${m}-${d}`;
-    router.push({ name: 'summary', query: { date: dateParam }}); // Use name 'summary' defined in router
-};
-
-const goToWeeklyPlan = () => {
-    isMenuOpen.value = false;
-    router.push({ name: 'weekly-schedules' });
-};
+// Redundant actions removed (handled by Sidebar)
 
 const currentTab = ref('shifts'); // 'shifts' or 'entry'
 
@@ -1649,73 +1538,7 @@ const activeWeeklyPlan = computed(() => {
     return store.getters.allWeeklyPlans.find(p => p.id === activeWeeklyPlanId.value) || null;
 });
 
-// Excel Report Logic
-const isExcelModalOpen = ref(false);
-
-const openExcelModal = () => {
-    isExcelModalOpen.value = true;
-    isMenuOpen.value = false;
-};
-
-const handleExcelAction = async (action) => {
-    try {
-        const d = currentDate.value;
-        const payload = {
-            month: d.getMonth() + 1,
-            year: d.getFullYear(),
-            shifts: shifts.value.map(s => ({
-                date: new Date(d.getFullYear(), d.getMonth(), s.dayNumber).toISOString(),
-                shiftType: s.type,
-                entryTime: s.entry,
-                exitTime: s.exit,
-                breakDuration: parseFloat(s.break) || 0,
-                additions: parseFloat(s.extra) || 0,
-                deductions: parseFloat(s.deduction) || 0,
-                comments: '', 
-                hours: parseFloat(s.hours) || 0,
-                wage: parseFloat(s.salary) || 0
-            })),
-            totals: {
-                 totalHours: parseFloat(totalHours.value) || 0,
-                 totalAdditions: 0, 
-                 totalDeductions: 0, 
-                 grossWage: 0, 
-                 netWage: parseFloat(totalSalary.value) || 0,
-                 healthTax: 0,
-                 nationalInsurance: 0,
-                 incomeTax: 0,
-                 pension: 0,
-                 studyFund: 0
-            },
-            emailAddress: store.getters.currentUser?.email || 'user@example.com' 
-        };
-        
-        // Approximations for totals
-        payload.shifts.forEach(s => {
-            payload.totals.totalAdditions += s.additions;
-            payload.totals.totalDeductions += s.deductions;
-        });
-        payload.totals.grossWage = payload.totals.netWage; // Simplification
-
-        if (action === 'view') {
-           const response = await api.post('reports/excel-view', payload, { responseType: 'blob' });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Report_${payload.month}_${payload.year}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } else if (action === 'email') {
-             await api.post('reports/excel-email', payload);
-             showToast('נשלח למייל בהצלחה', 'success');
-        }
-        isExcelModalOpen.value = false;
-    } catch (e) {
-        console.error(e);
-        showToast('שגיאה ביצירת דוח', 'error');
-    }
-};
+// Consolidated Excel Logic Removed (Handled by Sidebar)
 
 const recalculateAllShifts = async () => {
     if (!confirm('האם לחשב מחדש את כל המשמרות בחודש זה?')) return;
@@ -3763,153 +3586,7 @@ const closeQuickShiftModal = () => {
 
 
 
-/* Sidebar Overlay */
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 2000;
-}
-
-/* Sidebar */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0; /* Menu opens from Left */
-  width: 80%; /* Takes up most of the screen width */
-  max-width: 320px;
-  height: 100%;
-  background-color: #F5F5F5;
-  z-index: 2001;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-}
-
-.sidebar.open {
-  transform: translateX(0);
-}
-
-/* Sidebar Header */
-.sidebar-header {
-  height: 160px;
-  background: linear-gradient(135deg, #4DD0E1 0%, #0093AB 80%);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px;
-  color: white;
-  overflow: hidden;
-}
-
-.header-bg-decor {
-    position: absolute;
-    top: -50px;
-    right: -50px;
-    width: 200px;
-    height: 300px;
-    background: rgba(255, 235, 59, 0.2); /* Yellow tint */
-    transform: rotate(45deg);
-    z-index: 0;
-}
-
-.sidebar-top-row {
-  display: flex;
-  justify-content: flex-end; /* Account name Right aligned */
-  z-index: 1;
-}
-
-.account-name {
-  font-size: 0.9rem;
-  font-weight: 500;
-  opacity: 0.9;
-}
-
-.sidebar-bottom-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  z-index: 1;
-}
-
-.menu-label-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.menu-text {
-    font-size: 1.2rem;
-    font-weight: 700;
-}
-
-.user-avatar {
-    width: 50px;
-    height: 50px;
-    background: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.avatar-icon {
-    width: 30px;
-    height: 30px;
-    fill: #ddd;
-    stroke: #aaa;
-}
-
-/* Menu Items */
-.menu-items {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.menu-item {
-    display: flex;
-    align-items: center;
-    padding: 16px 24px;
-    text-decoration: none;
-    color: #444;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: background-color 0.2s;
-}
-
-.menu-item:hover {
-    background-color: rgba(0,0,0,0.05);
-}
-
-.item-icon {
-    margin-left: 16px; /* Icon on right, creates space between icon and text */
-    color: #555;
-    display: flex;
-    align-items: center;
-}
-
-.spacer-small {
-    height: 16px;
-}
-
-/* Sidebar Footer */
-.sidebar-footer {
-    padding: 16px;
-    font-size: 0.8rem;
-    color: #888;
-    text-align: left; /* v2.6 usually ltr */
-    direction: ltr; /* Force LTR for version number */
-    margin-left: 20px;
-}
+/* Sidebar Styles Removed (Moved to Sidebar Component) */
 /* Horizontal Slide Transition (Right to Left) */
 .horizontal-slide-enter-active,
 .horizontal-slide-leave-active {

@@ -247,78 +247,10 @@
         </div>
     </div>
 
-    <!-- Sidebar Menu -->
-    <aside class="sidebar" :class="{ open: isMenuOpen }">
-      <!-- Sidebar Header -->
-      <div class="sidebar-header">
-        <div class="header-bg-decor"></div>
-        <div class="sidebar-top-row">
-          <span class="account-name">חשבון: עבודה 1</span>
-        </div>
-        <div class="sidebar-bottom-row">
-          <div class="menu-label-group">
-            <button class="icon-btn" @click="isMenuOpen = false">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
-            <span class="menu-text">תפריט</span>
-          </div>
-          <div class="user-avatar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#ccc" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Menu Items -->
-      <div class="menu-items">
-        <router-link to="/shifts" class="menu-item" @click="isMenuOpen = false">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          </span>
-          <span>משמרות</span>
-        </router-link>
-        <router-link to="/summary" class="menu-item" @click="isMenuOpen = false">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-          </span>
-          <span>פירוט שכר</span>
-        </router-link>
-        <router-link to="/weekly-schedules" class="menu-item" @click="isMenuOpen = false">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-          </span>
-          <span>סידור עבודה</span>
-        </router-link>
-        <router-link to="/shift-types" class="menu-item" @click="isMenuOpen = false">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-          </span>
-          <span>הגדרת סוג משמרת</span>
-        </router-link>
-        <router-link to="/settings" class="menu-item active-menu-item" @click="isMenuOpen = false">
-          <span class="item-icon">
-             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-          </span>
-          <span>הגדרות</span>
-        </router-link>
-        <div class="spacer-small"></div>
-        <a href="#" class="menu-item">
-          <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          </span>
-          <span>דוח אקסל</span>
-        </a>
-        <div class="spacer-small"></div>
-        
-        <a href="#" class="menu-item" @click.prevent="logout">
-           <span class="item-icon">
-             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-           </span>
-           <span>יציאה</span>
-        </a>
-      </div>
-
-      <div class="sidebar-footer"></div>
-    </aside>
+    <Sidebar 
+      :isOpen="isMenuOpen" 
+      @update:isOpen="isMenuOpen = $event" 
+    />
 
   </div>
 </template>
@@ -327,6 +259,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
+import Sidebar from '../components/Sidebar.vue';
 
 const router = useRouter();
 const store = useStore();
@@ -483,10 +416,7 @@ const cancelChanges = () => {
 };
 
 
-const logout = () => {
-    store.dispatch('logout');
-    router.push({ name: 'login' });
-};
+// Logout handled by Sidebar
 </script>
 
 <style scoped>
