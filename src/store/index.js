@@ -522,7 +522,11 @@ export default createStore({
         },
 
         async syncFixedBreakDeduction({ commit, state, dispatch }, { enabled, minutes }) {
-            const existingItem = state.additionsDeductions.find(i => i.isFixedBreakAuto === true);
+            // Find any deduction that looks like a "Break" (manual or auto)
+            const existingItem = state.additionsDeductions.find(i =>
+                i.isFixedBreakAuto === true ||
+                (i.type === 'deduction' && i.description && i.description.includes('הפסקה'))
+            );
 
             if (enabled && minutes > 0) {
                 const newItem = {
@@ -537,13 +541,16 @@ export default createStore({
                 };
 
                 if (existingItem) {
-                    if (existingItem.minutes !== newItem.minutes) {
+                    // Update existing (even if it was manual before, we take control)
+                    if (existingItem.minutes !== newItem.minutes || !existingItem.isFixedBreakAuto) {
                         await dispatch('updateAdditionDeduction', { ...existingItem, ...newItem });
                     }
                 } else {
+                    // Create new
                     await dispatch('addAdditionDeduction', { ...newItem, id: Date.now() });
                 }
             } else {
+                // If disabled, remove the auto-created one (found by flag or name)
                 if (existingItem) {
                     await dispatch('deleteAdditionDeduction', existingItem.id);
                 }

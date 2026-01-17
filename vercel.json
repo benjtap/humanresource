@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/auth/(.*)",
-      "destination": "https://https://humanresourceapi-ibba.onrender.com/auth/$1"
+      "destination": "https://api.entreprenariat-beni.com/auth/$1"
     },
     {
       "source": "/(.*)",
